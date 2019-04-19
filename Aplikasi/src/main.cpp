@@ -114,7 +114,7 @@ int main()
   glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
   glfwSetCursorPosCallback(window, mouse_callback);
   glfwSetScrollCallback(window, scroll_callback);
-  glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+  //glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
   if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
   {
@@ -222,9 +222,9 @@ void processInput(GLFWwindow *window)
     glfwSetWindowShouldClose(window, true);
 
   if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
-    cameraSpeed = 70.0f;
+    cameraSpeed = 100.0f;
   else
-    cameraSpeed = 35.5f;
+    cameraSpeed = 50.0f;
 
   float appliedSpeed = cameraSpeed * deltaTime;
   if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
@@ -245,6 +245,10 @@ void processInput(GLFWwindow *window)
 
 void mouse_callback(GLFWwindow * window, double xpos, double ypos)
 {
+  int state = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT);
+  if (state == GLFW_PRESS)
+  {
+
   if (firstMouse)
   {
     lastX = xpos;
@@ -274,6 +278,7 @@ void mouse_callback(GLFWwindow * window, double xpos, double ypos)
   front.y = sin(glm::radians(pitch));
   front.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
   cameraFront = glm::normalize(front);
+  }
 }
 
 void scroll_callback(GLFWwindow * window, double xoffset, double yoffset)
