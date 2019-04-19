@@ -94,7 +94,6 @@
     <ClInclude Include="src\Shader.h" />
     <ClInclude Include="src\bvh.h" />
     <ClInclude Include="src\stb_image.h" />
-    <ClInclude Include="src\util.h" />
     <ClInclude Include="vendor\glm\glm\common.hpp" />
     <ClInclude Include="vendor\glm\glm\detail\_features.hpp" />
     <ClInclude Include="vendor\glm\glm\detail\_fixes.hpp" />
@@ -466,6 +465,12 @@
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\stb_image.cpp" />
     <ClCompile Include="vendor\Glad\src\glad.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="grid.fs" />
+    <None Include="grid.vs" />
+    <None Include="shader.fs" />
+    <None Include="shader.vs" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

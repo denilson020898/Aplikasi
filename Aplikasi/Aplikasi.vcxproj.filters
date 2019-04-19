@@ -42,9 +42,6 @@
     <ClInclude Include="src\stb_image.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="src\util.h">
-      <Filter>src</Filter>
-    </ClInclude>
     <ClInclude Include="vendor\glm\glm\common.hpp">
       <Filter>vendor\glm\glm</Filter>
     </ClInclude>
@@ -1154,5 +1151,11 @@
     <ClCompile Include="vendor\Glad\src\glad.c">
       <Filter>vendor\Glad\src</Filter>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="grid.vs" />
+    <None Include="grid.fs" />
+    <None Include="shader.fs" />
+    <None Include="shader.vs" />
   </ItemGroup>
 </Project>

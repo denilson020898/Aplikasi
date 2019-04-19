@@ -28,17 +28,11 @@ namespace k
       delete joint->channels_order;
     }
 
-    //    if( joint->name != NULL && joint->name != "EndSite" ){
-    //        klog.l() << joint->name;
-    //        delete joint->name;
-    //    }
-
     delete joint;
   }
 
   Bvh::~Bvh()
   {
-    //    klog.l() << "Bvh destructor";
     deleteJoint(rootJoint);
 
     //    for(JOINT* joint : allJoints)

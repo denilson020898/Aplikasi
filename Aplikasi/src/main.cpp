@@ -7,6 +7,7 @@
 #include "glm/gtc/matrix_inverse.hpp"
 
 #include <iostream>
+#include <stb_image.h>
 
 #include "Shader.h"
 #include "bvh.h"
@@ -124,7 +125,7 @@ int main()
 
   glfwSwapInterval(1);
   //glEnable(GL_DEPTH_TEST);
-  glLineWidth(3.0);
+  glLineWidth(2.5);
   glPointSize(5.0);
 
   Shader bvhShader("shader.vs", "shader.fs");
@@ -167,14 +168,39 @@ int main()
 
   glBindVertexArray(0);
 
-  for (int i = 0; i < vertices.size(); i++)
-  {
-    std::cout << "vertices "
-      << vertices[i].x << " "
-      << vertices[i].y << " "
-      << vertices[i].z << " "
-      << std::endl;
-  }
+  // GRID
+
+  float gridVertices[] = {
+    // positions          // colors           // texture coords
+     100.0f, 0.0f,  100.0f, 
+     100.0f, 0.0f, -100.0f, 
+    -100.0f, 0.0f, -100.0f, 
+    -100.0f, 0.0f,  100.0f, 
+  };
+  unsigned int gridIndices[] = {
+    0, 1, 3, // first triangle
+    1, 2, 3  // second triangle
+  };
+
+  unsigned int VBO, VAO, EBO;
+  glGenVertexArrays(1, &VAO);
+  glGenBuffers(1, &VBO);
+  glGenBuffers(1, &EBO);
+
+  glBindVertexArray(VAO);
+
+  glBindBuffer(GL_ARRAY_BUFFER, VBO);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(gridVertices), gridVertices, GL_STATIC_DRAW);
+
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(gridIndices), gridIndices, GL_STATIC_DRAW);
+
+  // position attribute
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+  glEnableVertexAttribArray(0);
+  // color attribute
+
+  Shader gridShader("grid.vs", "grid.fs");
 
   model = glm::scale(model, glm::vec3(0.5f, 0.5f, 0.5f));
   while (!glfwWindowShouldClose(window))
@@ -189,11 +215,19 @@ int main()
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 
+
+    // skeleton
     glm::mat4 view = glm::mat4(1.0f);
     view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
     glm::mat4 projection = glm::mat4(1.0f);
     projection = glm::perspective(glm::radians(fov), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 1000.0f);
     glm::mat4 mvp = projection * view * model;
+
+    //grid
+    gridShader.use();
+    gridShader.setMat4("mvp", mvp);
+    glBindVertexArray(VAO);
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
     bvhShader.use();
     bvhShader.setMat4("mvp", mvp);
