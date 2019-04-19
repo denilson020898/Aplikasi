@@ -1134,6 +1134,7 @@
     <ClInclude Include="vendor\glm\glm\vector_relational.hpp">
       <Filter>vendor\glm\glm</Filter>
     </ClInclude>
+    <ClInclude Include="src\bvh2.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Shader.cpp">
@@ -1151,6 +1152,7 @@
     <ClCompile Include="vendor\Glad\src\glad.c">
       <Filter>vendor\Glad\src</Filter>
     </ClCompile>
+    <ClCompile Include="src\bvh2.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="grid.vs" />

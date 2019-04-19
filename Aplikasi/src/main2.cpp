@@ -10,7 +10,7 @@
 #include <stb_image.h>
 
 #include "Shader.h"
-#include "bvh2.h"
+#include "bvh.h"
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow *window);
@@ -18,8 +18,8 @@ void processInput(GLFWwindow *window);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 
-unsigned int SCR_WIDTH = 1330;
-unsigned int SCR_HEIGHT = 768;
+unsigned int SCR_WIDTH = 1280;
+unsigned int SCR_HEIGHT = 720;
 
 glm::vec3 cameraPos = glm::vec3(0.0f, 70.0f, 200.0f);
 glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
@@ -37,17 +37,18 @@ float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 
 // settings
+
 static GLuint vboVert, vboIndices;
 static GLuint vao;
 
 glm::mat4 model = glm::mat4(1.0f);
 
 short bvh_elements = 0;
-Bvh2* bvh;
+k::Bvh* bvh;
 int frame = 0;
 int frameChange = 1;
 
-void tmpProcess(Joint* joint,
+void tmpProcess(k::JOINT* joint,
                 std::vector<glm::vec4>& vertices,
                 std::vector<GLshort>& indices,
                 GLshort parentIndex = 0)
@@ -56,7 +57,7 @@ void tmpProcess(Joint* joint,
 
   vertices.push_back(translatedVertex);
 
-  GLshort myindex = (GLshort)(vertices.size() - 1);
+  GLshort myindex = vertices.size() - 1;
 
   if (parentIndex != myindex)
   {
@@ -89,7 +90,7 @@ void update()
   std::vector<glm::vec4> vertices;
   std::vector<GLshort> bvhindices;
 
-  tmpProcess((Joint*)bvh->getRootJoint(), vertices, bvhindices);
+  tmpProcess((k::JOINT*)bvh->getRootJoint(), vertices, bvhindices);
 
   glBindBuffer(GL_ARRAY_BUFFER, vboVert);
   glBufferData(GL_ARRAY_BUFFER, sizeof(vertices[0]) * vertices.size(), &vertices[0], GL_DYNAMIC_DRAW);
@@ -129,17 +130,17 @@ int main()
 
   Shader bvhShader("shader.vs", "shader.fs");
 
-  bvh = new Bvh2;
+  bvh = new k::Bvh;
   bvh->load("data/example.bvh");
   bvh->testOutput();
-  //bvh->printJoint(bvh->getRootJoint());
+  bvh->printJoint(bvh->getRootJoint());
   bvh->moveTo(frame);
 
   std::vector<glm::vec4> vertices;
   std::vector<GLshort> bvhindices;
 
-  tmpProcess((Joint*)bvh->getRootJoint(), vertices, bvhindices);
-  bvh_elements = (short)bvhindices.size();
+  tmpProcess((k::JOINT*)bvh->getRootJoint(), vertices, bvhindices);
+  bvh_elements = bvhindices.size();
 
   glGenBuffers(1, &vboVert);
   glBindBuffer(GL_ARRAY_BUFFER, vboVert);
@@ -205,7 +206,7 @@ int main()
   while (!glfwWindowShouldClose(window))
   {
 
-    float currentTime = (float)glfwGetTime();
+    float currentTime = glfwGetTime();
     deltaTime = currentTime - lastFrame;
     lastFrame = currentTime;
 
@@ -278,24 +279,21 @@ void processInput(GLFWwindow *window)
 
 void mouse_callback(GLFWwindow * window, double xpos, double ypos)
 {
-  float xposf = (float)xpos;
-  float yposf = (float)ypos;
-
   int state = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT);
   if (state == GLFW_PRESS)
   {
 
   if (firstMouse)
   {
-    lastX = xposf;
-    lastY = yposf;
+    lastX = xpos;
+    lastY = ypos;
     firstMouse = false;
   }
 
-  float xoffset = xposf - lastX;
-  float yoffset = lastY - yposf;
-  lastX = xposf;
-  lastY = yposf;
+  float xoffset = xpos - lastX;
+  float yoffset = lastY - ypos;
+  lastX = xpos;
+  lastY = ypos;
 
   float sensitivity = 0.1f;
   xoffset *= sensitivity;
@@ -320,7 +318,7 @@ void mouse_callback(GLFWwindow * window, double xpos, double ypos)
 void scroll_callback(GLFWwindow * window, double xoffset, double yoffset)
 {
   if (fov >= 1.0f && fov <= 45.0f)
-    fov -= (float)yoffset;
+    fov -= yoffset;
   if (fov <= 1.0f)
     fov = 1.0f;
   if (fov >= 45.0f)
