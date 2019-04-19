@@ -1135,15 +1135,14 @@
       <Filter>vendor\glm\glm</Filter>
     </ClInclude>
     <ClInclude Include="src\bvh2.h" />
+    <ClInclude Include="src\FPSLimiter.h" />
+    <ClInclude Include="src\Timer.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Shader.cpp">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="src\bvh.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="src\main.cpp">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="src\stb_image.cpp">
@@ -1153,6 +1152,9 @@
       <Filter>vendor\Glad\src</Filter>
     </ClCompile>
     <ClCompile Include="src\bvh2.cpp" />
+    <ClCompile Include="src\main2.cpp" />
+    <ClCompile Include="src\FPSLimiter.cpp" />
+    <ClCompile Include="src\Timer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="grid.vs" />

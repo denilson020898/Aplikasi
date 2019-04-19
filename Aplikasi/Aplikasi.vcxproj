@@ -92,9 +92,11 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="src\bvh2.h" />
+    <ClInclude Include="src\FPSLimiter.h" />
     <ClInclude Include="src\Shader.h" />
     <ClInclude Include="src\bvh.h" />
     <ClInclude Include="src\stb_image.h" />
+    <ClInclude Include="src\Timer.h" />
     <ClInclude Include="vendor\glm\glm\common.hpp" />
     <ClInclude Include="vendor\glm\glm\detail\_features.hpp" />
     <ClInclude Include="vendor\glm\glm\detail\_fixes.hpp" />
@@ -462,10 +464,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\bvh2.cpp" />
+    <ClCompile Include="src\FPSLimiter.cpp" />
+    <ClCompile Include="src\main2.cpp" />
     <ClCompile Include="src\Shader.cpp" />
     <ClCompile Include="src\bvh.cpp" />
-    <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\stb_image.cpp" />
+    <ClCompile Include="src\Timer.cpp" />
     <ClCompile Include="vendor\Glad\src\glad.c" />
   </ItemGroup>
   <ItemGroup>
