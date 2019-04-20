@@ -1152,14 +1152,14 @@
       <Filter>vendor\Glad\src</Filter>
     </ClCompile>
     <ClCompile Include="src\bvh2.cpp" />
-    <ClCompile Include="src\main2.cpp" />
     <ClCompile Include="src\FPSLimiter.cpp" />
     <ClCompile Include="src\Timer.cpp" />
+    <ClCompile Include="src\main2.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="grid.vs" />
-    <None Include="grid.fs" />
     <None Include="shader.fs" />
     <None Include="shader.vs" />
+    <None Include="floor.fs" />
+    <None Include="floor.vs" />
   </ItemGroup>
 </Project>

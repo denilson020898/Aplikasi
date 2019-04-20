@@ -473,8 +473,8 @@
     <ClCompile Include="vendor\Glad\src\glad.c" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="grid.fs" />
-    <None Include="grid.vs" />
+    <None Include="floor.fs" />
+    <None Include="floor.vs" />
     <None Include="shader.fs" />
     <None Include="shader.vs" />
   </ItemGroup>

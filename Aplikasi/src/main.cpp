@@ -199,9 +199,9 @@ int main()
   glEnableVertexAttribArray(0);
   // color attribute
 
-  Shader gridShader("grid.vs", "grid.fs");
+  Shader gridShader("floor.vs", "floor.fs");
 
-  model = glm::scale(model, glm::vec3(0.5f, 0.5f, 0.5f));
+  //model = glm::scale(model, glm::vec3(0.5f, 0.5f, 0.5f));
   while (!glfwWindowShouldClose(window))
   {
 

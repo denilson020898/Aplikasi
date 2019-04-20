@@ -43,7 +43,7 @@ double jointPointSize = 4.0;
 double comPointSize = 4.0;
 
 Bvh2* bvh;
-unsigned int bvhVBO, bvhIBO, bvhVAO;
+unsigned int bvhVBO, bvhEBO, bvhVAO;
 short bvhElements = 0;
 int bvhFrame = 0;
 bool frameChange = true;
@@ -110,14 +110,45 @@ int main()
   glfwSetFramebufferSizeCallback(window, frameBufferSizeCallback);
   glfwSetCursorPosCallback(window, mouseCallback);
   glfwSetScrollCallback(window, scrollCallback);
-  //glEnable(GL_DEPTH_TEST);
 
   if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
   {
     std::cout << "Failed to initialize Glad" << std::endl;
     return -1;
   }
+  glEnable(GL_DEPTH_TEST);
 
+  // floor
+  float floorVertices[] = {
+     200.0f, 0.0f,  200.0f,
+     200.0f, 0.0f, -200.0f,
+    -200.0f, 0.0f, -200.0f,
+    -200.0f, 0.0f,  200.0f
+  };
+  unsigned int floorIndices[] = {
+    0, 1, 3,
+    1, 2, 3
+  };
+  unsigned int floorVBO, floorEBO, floorVAO;
+  glGenVertexArrays(1, &floorVAO);
+  glGenBuffers(1, &floorVBO);
+  glGenBuffers(1, &floorEBO);
+  glBindVertexArray(floorVAO);
+  glBindBuffer(GL_ARRAY_BUFFER, floorVBO);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(floorVertices), floorVertices, GL_STATIC_DRAW);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, floorEBO);
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(floorIndices), floorIndices, GL_STATIC_DRAW);
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+  glEnableVertexAttribArray(0);
+  Shader floorShader("floor.vs", "floor.fs");
+
+  glm::mat4 model = glm::mat4(1.0f);
+  glm::mat4 view = glm::mat4(1.0f);
+  glm::mat4 projection = glm::mat4(1.0f);
+  glm::mat4 mvp = glm::mat4(1.0f);
+
+  // scale the model if it's too big
+  model = glm::scale(model, glm::vec3(0.25f, 0.25f, 0.25f));
   while (!glfwWindowShouldClose(window))
   {
     float currentTime = (float)glfwGetTime();
@@ -127,12 +158,24 @@ int main()
     processInput(window);
 
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT);
-    //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    // pre render calculation
+    view = glm::lookAt(cameraPos, cameraPos+cameraFront, cameraUp);
+    projection = glm::perspective(glm::radians(fov), float(screenWidth/screenHeight), 
+                                  0.1f, 1000.0f);
+    mvp = projection * view * model;
+
+    // draw floor
+    floorShader.use();
+    floorShader.setMat4("mvp", mvp);
+    glBindVertexArray(floorVAO);
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
     glfwSwapBuffers(window);
     glfwPollEvents();
 
+    //std::cout << 1.0f / deltaTime <<  " [" << FPS << "]" << std::endl;
     fpslimiter.Pulse(FPS);
   }
 
@@ -152,9 +195,9 @@ void processInput(GLFWwindow * window)
     glfwSetWindowShouldClose(window, true);
 
   if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
-    cameraSpeed = 100.0f;
+    cameraSpeed = 300.0f;
   else
-    cameraSpeed = 50.0f;
+    cameraSpeed = 150.0f;
 
   float appliedSpeed = cameraSpeed * deltaTime;
   if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
@@ -170,6 +213,11 @@ void processInput(GLFWwindow * window)
     cameraPos += appliedSpeed * cameraUp;
   if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
     cameraPos -= appliedSpeed * cameraUp;
+
+  if (glfwGetKey(window, GLFW_KEY_J) == GLFW_PRESS)
+    FPS -= 2;
+  if (glfwGetKey(window, GLFW_KEY_K) == GLFW_PRESS)
+    FPS += 2;
 }
 
 void mouseCallback(GLFWwindow * window, double xpos, double ypos)
