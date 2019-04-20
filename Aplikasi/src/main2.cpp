@@ -10,7 +10,6 @@
 
 #include "Shader.h"
 #include "bvh2.h"
-
 #include "FPSLimiter.h"
 
 // GLFW callbacks declarations
@@ -20,12 +19,11 @@ void mouseCallback(GLFWwindow* window, double xpos, double ypos);
 void scrollCallback(GLFWwindow* window, double xoffset, double yoffset);
 
 // renderer settings
-unsigned int SCR_WIDTH = 1330;
-unsigned int SCR_HEIGHT = 768;
-int FPS               = 60;
-double boneWidth      = 2.0;
-double jointPointSize = 4.0;
-double comPointSize   = 4.0;
+unsigned int screenWidth = 1330;
+unsigned int screenHeight = 768;
+int FPS = 60;
+float deltaTime = 0.0f;
+float lastFrame = 0.0f;
 
 // camera settings
 glm::vec3 cameraPos = glm::vec3(0.0f, 70.0f, 200.0f);
@@ -35,23 +33,73 @@ float cameraSpeed = 2.5f;
 bool firstMouse = true;
 float yaw = -90.0f;
 float pitch = 0.0f;
-float lastX = SCR_WIDTH / 2.0f;
-float lastY = SCR_HEIGHT / 2.0f;
+float lastX = screenWidth / 2.0f;
+float lastY = screenHeight / 2.0f;
 float fov = 45.0f;
 
-float deltaTime = 0.0f;
-float lastFrame = 0.0f;
+// bvh settings
+double boneWidth = 2.0;
+double jointPointSize = 4.0;
+double comPointSize = 4.0;
+
+Bvh2* bvh;
+unsigned int bvhVBO, bvhIBO, bvhVAO;
+short bvhElements = 0;
+int bvhFrame = 0;
+bool frameChange = true;
+
+void processBvh(Joint * joint, std::vector<glm::vec4>& vertices, 
+                std::vector<short>& indices, short parentIndex = 0)
+{
+  glm::vec4 translatedVertex = joint->matrix[3];
+  vertices.push_back(translatedVertex);
+  short myindex = (short)(vertices.size() - 1);
+  if (parentIndex != myindex)
+  {
+    indices.push_back(parentIndex);
+    indices.push_back(myindex);
+  }
+  for (auto& child : joint->children)
+  {
+    processBvh(child, vertices, indices, myindex);
+  }
+}
+
+void updateBvh()
+{
+  if (frameChange)
+  {
+    bvhFrame++;
+  }
+  else
+  {
+    return;
+  }
+
+  int frameto = bvhFrame % bvh->getNumFrames();
+  //std::cout << "move to " << frameto << std::endl;
+  bvh->moveTo(frameto);
+
+  std::vector<glm::vec4> vertices;
+  std::vector<short> bvhindices;
+
+  processBvh((Joint*)bvh->getRootJoint(), vertices, bvhindices);
+
+  glBindBuffer(GL_ARRAY_BUFFER, bvhVBO);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(vertices[0]) * vertices.size(), &vertices[0], GL_DYNAMIC_DRAW);
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
 
 int main()
 {
-	FPSLimiter fpslimiter;
+  FPSLimiter fpslimiter;
 
   glfwInit();
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-  GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "PENULISAN ILMIAH", nullptr, nullptr);
+  GLFWwindow* window = glfwCreateWindow(screenWidth, screenHeight, "PENULISAN ILMIAH", nullptr, nullptr);
   if (window == nullptr)
   {
     std::cout << "Failed to create GLFW window" << std::endl;
@@ -62,6 +110,7 @@ int main()
   glfwSetFramebufferSizeCallback(window, frameBufferSizeCallback);
   glfwSetCursorPosCallback(window, mouseCallback);
   glfwSetScrollCallback(window, scrollCallback);
+  //glEnable(GL_DEPTH_TEST);
 
   if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
   {
@@ -70,7 +119,7 @@ int main()
   }
 
   while (!glfwWindowShouldClose(window))
-	{
+  {
     float currentTime = (float)glfwGetTime();
     deltaTime = currentTime - lastFrame;
     lastFrame = currentTime;
@@ -79,15 +128,16 @@ int main()
 
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
+    //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glfwSwapBuffers(window);
     glfwPollEvents();
 
-		fpslimiter.Pulse(60);
-	}
+    fpslimiter.Pulse(FPS);
+  }
 
   glfwTerminate();
-	return 0;
+  return 0;
 }
 
 // GLFW callbacks definitions
@@ -131,35 +181,35 @@ void mouseCallback(GLFWwindow * window, double xpos, double ypos)
   if (state == GLFW_PRESS)
   {
 
-  if (firstMouse)
-  {
+    if (firstMouse)
+    {
+      lastX = xposf;
+      lastY = yposf;
+      firstMouse = false;
+    }
+
+    float xoffset = xposf - lastX;
+    float yoffset = lastY - yposf;
     lastX = xposf;
     lastY = yposf;
-    firstMouse = false;
-  }
 
-  float xoffset = xposf - lastX;
-  float yoffset = lastY - yposf;
-  lastX = xposf;
-  lastY = yposf;
+    float sensitivity = 0.1f;
+    xoffset *= sensitivity;
+    yoffset *= sensitivity;
 
-  float sensitivity = 0.1f;
-  xoffset *= sensitivity;
-  yoffset *= sensitivity;
+    yaw += xoffset;
+    pitch += yoffset;
 
-  yaw += xoffset;
-  pitch += yoffset;
+    if (pitch > 89.0f)
+      pitch = 89.0f;
+    if (pitch < -89.0f)
+      pitch = -89.0f;
 
-  if (pitch > 89.0f)
-    pitch = 89.0f;
-  if (pitch < -89.0f)
-    pitch = -89.0f;
-
-  glm::vec3 front;
-  front.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
-  front.y = sin(glm::radians(pitch));
-  front.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
-  cameraFront = glm::normalize(front);
+    glm::vec3 front;
+    front.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+    front.y = sin(glm::radians(pitch));
+    front.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+    cameraFront = glm::normalize(front);
   }
 }
 
