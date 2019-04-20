@@ -38,7 +38,7 @@ float lastY = screenHeight / 2.0f;
 float fov = 45.0f;
 
 // bvh settings
-double boneWidth = 2.0;
+double boneWidth = 3.0;
 double jointPointSize = 4.0;
 double comPointSize = 4.0;
 
@@ -117,38 +117,73 @@ int main()
     return -1;
   }
   glEnable(GL_DEPTH_TEST);
+  glLineWidth(boneWidth);
+  glPointSize(jointPointSize);
 
   // floor
   float floorVertices[] = {
-     200.0f, 0.0f,  200.0f,
-     200.0f, 0.0f, -200.0f,
-    -200.0f, 0.0f, -200.0f,
-    -200.0f, 0.0f,  200.0f
+     100.0f, 0.0f,  100.0f,
+     100.0f, 0.0f, -100.0f,
+    -100.0f, 0.0f, -100.0f,
+    -100.0f, 0.0f,  100.0f
   };
   unsigned int floorIndices[] = {
     0, 1, 3,
     1, 2, 3
   };
   unsigned int floorVBO, floorEBO, floorVAO;
+
   glGenVertexArrays(1, &floorVAO);
   glGenBuffers(1, &floorVBO);
   glGenBuffers(1, &floorEBO);
+
   glBindVertexArray(floorVAO);
+
   glBindBuffer(GL_ARRAY_BUFFER, floorVBO);
   glBufferData(GL_ARRAY_BUFFER, sizeof(floorVertices), floorVertices, GL_STATIC_DRAW);
+
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, floorEBO);
   glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(floorIndices), floorIndices, GL_STATIC_DRAW);
+
   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
   glEnableVertexAttribArray(0);
   Shader floorShader("floor.vs", "floor.fs");
 
+  // bvh
+  bvh = new Bvh2;
+  bvh->load("data/example.bvh");
+  bvh->testOutput();
+  bvh->moveTo(bvhFrame);
+  std::vector<glm::vec4> vertices;
+  std::vector<short> bvhindices;
+  processBvh((Joint*)bvh->getRootJoint(), vertices, bvhindices);
+  bvhElements = (short)bvhindices.size();
+
+  glGenVertexArrays(1, &bvhVAO);
+  glGenBuffers(1, &bvhVBO);
+  glGenBuffers(1, &bvhEBO);
+
+  glBindVertexArray(bvhVAO);
+
+  glBindBuffer(GL_ARRAY_BUFFER, bvhVBO);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(vertices[0]) * vertices.size(), &vertices[0], GL_DYNAMIC_DRAW);
+  glBindBuffer(GL_ARRAY_BUFFER, bvhVBO);
+  glEnableVertexAttribArray(0);
+  glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, 0);
+
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, bvhEBO);
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(bvhindices[0]) * bvhindices.size(), &bvhindices[0], GL_DYNAMIC_DRAW);
+
+  Shader bvhShader("shader.vs", "shader.fs");
+
+  // mvp
   glm::mat4 model = glm::mat4(1.0f);
   glm::mat4 view = glm::mat4(1.0f);
   glm::mat4 projection = glm::mat4(1.0f);
   glm::mat4 mvp = glm::mat4(1.0f);
 
   // scale the model if it's too big
-  model = glm::scale(model, glm::vec3(0.25f, 0.25f, 0.25f));
+  //model = glm::scale(model, glm::vec3(0.25f, 0.25f, 0.25f));
   while (!glfwWindowShouldClose(window))
   {
     float currentTime = (float)glfwGetTime();
@@ -162,7 +197,7 @@ int main()
 
     // pre render calculation
     view = glm::lookAt(cameraPos, cameraPos+cameraFront, cameraUp);
-    projection = glm::perspective(glm::radians(fov), float(screenWidth/screenHeight), 
+    projection = glm::perspective(glm::radians(fov), (float)screenWidth/(float)screenHeight, 
                                   0.1f, 1000.0f);
     mvp = projection * view * model;
 
@@ -171,6 +206,14 @@ int main()
     floorShader.setMat4("mvp", mvp);
     glBindVertexArray(floorVAO);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+    // skeleton
+    bvhShader.use();
+    bvhShader.setMat4("mvp", mvp);
+    updateBvh();
+    glBindVertexArray(bvhVAO);
+    glDrawElements(GL_LINES, bvhElements, GL_UNSIGNED_SHORT, (void*)0);
+    glDrawElements(GL_POINTS, bvhElements, GL_UNSIGNED_SHORT, (void*)0);
 
     glfwSwapBuffers(window);
     glfwPollEvents();
@@ -218,6 +261,8 @@ void processInput(GLFWwindow * window)
     FPS -= 2;
   if (glfwGetKey(window, GLFW_KEY_K) == GLFW_PRESS)
     FPS += 2;
+  if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS)
+    frameChange = !frameChange;
 }
 
 void mouseCallback(GLFWwindow * window, double xpos, double ypos)
