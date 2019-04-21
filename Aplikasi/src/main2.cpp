@@ -14,7 +14,6 @@
 
 #include "Shader.h"
 #include "bvh2.h"
-#include "FPSLimiter.h"
 
 // GLFW callbacks declarations
 void frameBufferSizeCallback(GLFWwindow* window, int width, int height);
@@ -40,6 +39,11 @@ float pitch = 0.0f;
 float lastX = screenWidth / 2.0f;
 float lastY = screenHeight / 2.0f;
 float fov = 45.0f;
+float backgroundColor[3] = {0.2f, 0.2f, 0.2f};
+float floorColor[3] = {0.4, 0.4, 0.4};
+float boneColor[3] = {1.0f, 0.5f, 0.25f};
+float jointColor[3] = {0.5f, 0.5f, 1.0f};
+float comColor[3] = {1.0f, 0.0f, 0.0f};
 
 // bvh settings
 float boneWidth = 1.5;
@@ -75,10 +79,6 @@ void updateBvh()
   {
     bvhFrame++;
   }
-  else
-  {
-    return;
-  }
 
   bvhFrame = bvhFrame % bvh->getNumFrames();
   //std::cout << "move to " << frameto << std::endl;
@@ -96,8 +96,6 @@ void updateBvh()
 
 int main()
 {
-  FPSLimiter fpslimiter;
-
   glfwInit();
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -121,6 +119,7 @@ int main()
     return -1;
   }
   glEnable(GL_DEPTH_TEST);
+  glfwSwapInterval(1); 
 
   // floor
   float floorVertices[] = {
@@ -196,6 +195,8 @@ int main()
 
   // scale the model if it's too big
   //model = glm::scale(model, glm::vec3(0.25f, 0.25f, 0.25f));
+
+  //double lastTimeFrame = glfwGetTime();
   while (!glfwWindowShouldClose(window))
   {
     glfwPollEvents();
@@ -204,7 +205,7 @@ int main()
     ImGui::NewFrame();
 
     processInput(window);
-    glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+    glClearColor(backgroundColor[0], backgroundColor[1], backgroundColor[2], 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     float currentTime = (float)glfwGetTime();
@@ -223,6 +224,7 @@ int main()
     // draw floor
     floorShader.use();
     floorShader.setMat4("mvp", mvp);
+    floorShader.setVec3("ourColor", floorColor[0], floorColor[1], floorColor[2]);
     glBindVertexArray(floorVAO);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
@@ -231,26 +233,38 @@ int main()
     bvhShader.setMat4("mvp", mvp);
     updateBvh();
     glBindVertexArray(bvhVAO);
+    bvhShader.setVec3("ourColor", boneColor[0], boneColor[1], boneColor[2]);
     glDrawElements(GL_LINES, bvhElements, GL_UNSIGNED_SHORT, (void*)0);
+    bvhShader.setVec3("ourColor", jointColor[0], jointColor[1], jointColor[2]);
     glDrawElements(GL_POINTS, bvhElements, GL_UNSIGNED_SHORT, (void*)0);
 
     // BVH Player Settings;
     {
       ImGui::Begin("BVH Player Settings");
-      ImGui::Text("Application average %.3f ms/frame (%.1f FPS) || FPS in settings (%i)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate, FPS);
+      ImGui::Text("%.1f FPS (Application average %.3f ms/frame)", ImGui::GetIO().Framerate, 1000.0f / ImGui::GetIO().Framerate);
 
-      if (ImGui::Button("PLAY / PAUSE"))
-        frameChange = !frameChange;
+      ImGui::PushItemWidth(200);
+      ImGui::ColorEdit3("Floor Color", floorColor);
       ImGui::SameLine();
+      ImGui::ColorEdit3("Background Color", backgroundColor);
+      ImGui::ColorEdit3("Bone Color", boneColor);
+      ImGui::SameLine();
+      ImGui::ColorEdit3("Joint Color", jointColor);
+      ImGui::SameLine();
+      ImGui::ColorEdit3("COM Color", comColor);
+
+      ImGui::SliderFloat("Bone Width", &boneWidth, 0.001, 10.0f);
+      ImGui::SameLine();
+      ImGui::SliderFloat("Joint Size", &jointPointSize, 0.001, 10.0f);
+      ImGui::SameLine();
+      ImGui::SliderFloat("COM Size", &comPointSize, 0.001, 10.0f);
+      ImGui::PopItemWidth();
+
       ImGui::SliderInt("Frame", &bvhFrame, 0, bvh->getNumFrames());
       ImGui::SameLine();
-      if (ImGui::Button("GO TO"))
-        updateBvh();
+      if (ImGui::Button("PLAY / PAUSE"))
+        frameChange = !frameChange;
 
-
-
-      ImGui::SliderFloat("Bone Width", &boneWidth, 0.01, 10.0f);
-      ImGui::SliderFloat("Joint Size", &jointPointSize, 0.01, 10.0f);
       ImGui::End();
     }
 
@@ -265,11 +279,12 @@ int main()
 
     ImGui::Render();
 
-
-    //std::cout << 1.0f / deltaTime <<  " [" << FPS << "]" << std::endl;
-    fpslimiter.Pulse(FPS);
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     glfwSwapBuffers(window);
+
+    //while (glfwGetTime() < lastTimeFrame + 1.0 / FPS) {
+    //}
+    //lastTimeFrame += 1.0 / FPS;
   }
 
   glfwTerminate();
