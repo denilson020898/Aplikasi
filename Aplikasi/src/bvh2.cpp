@@ -97,6 +97,22 @@ Bvh2::~Bvh2()
   }
 }
 
+void Bvh2::printJoint(const Joint * const joint) const
+{
+  std::cout << "joint: \t" << joint->name  << std::endl;
+
+  for (std::vector<Joint*>::const_iterator ct = joint->children.begin();
+       ct != joint->children.end();
+       ++ct)
+  {
+    Joint* _tmp = *ct;
+    if (_tmp->children.size() > 0)
+    {
+      printJoint(_tmp);
+    }
+  }
+}
+
 void Bvh2::load(const std::string & filename)
 {
   std::fstream file;

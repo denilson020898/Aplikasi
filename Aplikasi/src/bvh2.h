@@ -51,6 +51,7 @@ public:
   Bvh2();
   ~Bvh2();
 
+  void printJoint(const Joint* const joint) const;
   void load(const std::string& filename);
   void testOutput() const;
   void moveTo(unsigned int frame);
