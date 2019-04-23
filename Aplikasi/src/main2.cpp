@@ -83,7 +83,7 @@ void updateBvh()
     {
       bvhFrame = bvhFrame % bvh->getNumFrames();
     }
-    else if (!loop && bvhFrame < bvh->getNumFrames())
+    else if (!loop && (unsigned int)bvhFrame < bvh->getNumFrames())
     {
     }
     else 
