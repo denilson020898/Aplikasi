@@ -57,14 +57,18 @@ public:
   void moveTo(unsigned int frame);
 
   const Joint* getRootJoint() const { return rootJoint; }
-  unsigned int getNumFrames() const { return motionData.numFrames; }
+  unsigned int getNumFrames() const { return motionData.numFrames - 1; }
+  std::vector<std::string> getJointNames() { return jointNames; };
 
 private:
   Joint* loadJoint(std::istream& stream, Joint* parent = nullptr);
   void loadHierarchy(std::istream& stream);
   void loadMotion(std::istream& stream);
+  void setJointNames(const Joint* const joint);
 
 private:
   Joint* rootJoint;
   Motion motionData;
+
+  std::vector<std::string> jointNames;
 };

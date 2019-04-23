@@ -27,9 +27,10 @@ unsigned int screenHeight = 900;
 int FPS = 100;
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
+bool loop = false;
 
 // camera settings
-glm::vec3 cameraPos = glm::vec3(0.0f, 70.0f, 300.0f);
+glm::vec3 cameraPos = glm::vec3(100.0f, 70.0f, 300.0f);
 glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
 glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
 float cameraSpeed = 2.5f;
@@ -40,14 +41,14 @@ float lastX = screenWidth / 2.0f;
 float lastY = screenHeight / 2.0f;
 float fov = 45.0f;
 float backgroundColor[3] = {0.2f, 0.2f, 0.2f};
-float floorColor[3] = {0.4, 0.4, 0.4};
-float boneColor[3] = {1.0f, 0.5f, 0.25f};
-float jointColor[3] = {0.5f, 0.5f, 1.0f};
-float comColor[3] = {1.0f, 0.0f, 0.0f};
+float floorColor[3] = {0.05f, 0.05f, 0.05f};
+float boneColor[3] = {0.5f, 0.5f, 0.5f};
+float jointColor[3] = {0.5f, 1.0f, 1.0f};
+float comColor[3] = {1.0f, 1.0f, 0.5f};
 
 // bvh settings
-float boneWidth = 1.5;
-float jointPointSize = 8.0;
+float boneWidth = 2.0;
+float jointPointSize = 4.0;
 float comPointSize = 8.0;
 
 Bvh2* bvh;
@@ -78,9 +79,20 @@ void updateBvh()
   if (frameChange)
   {
     bvhFrame++;
+    if (loop)
+    {
+      bvhFrame = bvhFrame % bvh->getNumFrames();
+    }
+    else if (!loop && bvhFrame < bvh->getNumFrames())
+    {
+    }
+    else 
+    {
+      frameChange = false;
+      bvhFrame = 0;
+    }
   }
 
-  bvhFrame = bvhFrame % bvh->getNumFrames();
   //std::cout << "move to " << frameto << std::endl;
   bvh->moveTo(bvhFrame);
 
@@ -153,8 +165,6 @@ int main()
   // bvh
   bvh = new Bvh2;
   bvh->load("data/example2.bvh");
-  bvh->testOutput();
-  bvh->printJoint(bvh->getRootJoint());
   bvh->moveTo(bvhFrame);
   std::vector<glm::vec4> vertices;
   std::vector<short> bvhindices;
@@ -241,36 +251,47 @@ int main()
     // BVH Player Settings;
     {
       ImGui::Begin("BVH Player Settings");
-      ImGui::Text("%.1f FPS (Application average %.3f ms/frame)", ImGui::GetIO().Framerate, 1000.0f / ImGui::GetIO().Framerate);
 
       ImGui::PushItemWidth(200);
       ImGui::ColorEdit3("Floor Color", floorColor);
       ImGui::SameLine();
       ImGui::ColorEdit3("Background Color", backgroundColor);
-      ImGui::ColorEdit3("Bone Color", boneColor);
+      ImGui::ColorEdit3("Bone Color ", boneColor);
       ImGui::SameLine();
       ImGui::ColorEdit3("Joint Color", jointColor);
       ImGui::SameLine();
       ImGui::ColorEdit3("COM Color", comColor);
 
-      ImGui::SliderFloat("Bone Width", &boneWidth, 0.001, 10.0f);
+      ImGui::SliderFloat("Bone Width ", &boneWidth, 0.001f, 10.0f);
       ImGui::SameLine();
-      ImGui::SliderFloat("Joint Size", &jointPointSize, 0.001, 10.0f);
+      ImGui::SliderFloat("Joint Size ", &jointPointSize, 0.001f, 10.0f);
       ImGui::SameLine();
-      ImGui::SliderFloat("COM Size", &comPointSize, 0.001, 10.0f);
+      ImGui::SliderFloat("COM Size", &comPointSize, 0.001f, 10.0f);
       ImGui::PopItemWidth();
+
 
       ImGui::SliderInt("Frame", &bvhFrame, 0, bvh->getNumFrames());
       ImGui::SameLine();
-      if (ImGui::Button("PLAY / PAUSE"))
+      ImGui::Checkbox("Loop", &loop);
+      ImGui::SameLine();
+      if (ImGui::Button("Play / Pause"))
         frameChange = !frameChange;
 
+      ImGui::Text("%.1f FPS", ImGui::GetIO().Framerate);
+      ImGui::Text("Application average %.3f ms/frame", 1000.0f / ImGui::GetIO().Framerate);
       ImGui::End();
     }
 
     // BVH Stats
     {
       ImGui::Begin("BVH Stats");
+      ImGui::Text("Number of frames: %i", bvh->getNumFrames());
+
+      for (const auto& jName : bvh->getJointNames())
+      {
+        ImGui::Text("Joint: %s", jName.c_str());
+      }
+
       ImGui::End();
     }
 
@@ -321,15 +342,6 @@ void processInput(GLFWwindow * window)
     cameraPos += appliedSpeed * cameraUp;
   if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
     cameraPos -= appliedSpeed * cameraUp;
-
-  if (glfwGetKey(window, GLFW_KEY_J) == GLFW_PRESS)
-    boneWidth -= 0.5;
-  if (glfwGetKey(window, GLFW_KEY_K) == GLFW_PRESS)
-    boneWidth += 0.5;
-  if (glfwGetKey(window, GLFW_KEY_U) == GLFW_PRESS)
-    jointPointSize -= 0.5;
-  if (glfwGetKey(window, GLFW_KEY_I) == GLFW_PRESS)
-    jointPointSize += 0.5;
 
   if (glfwGetKey(window, GLFW_KEY_O) == GLFW_PRESS)
     FPS -= 1;

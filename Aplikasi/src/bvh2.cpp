@@ -83,13 +83,15 @@ void moveJoint(Joint* joint, Motion* motionData, int frameStartsIndex)
 
 Bvh2::Bvh2()
   :
-  rootJoint(nullptr)
+  rootJoint(nullptr),
+  jointNames()
 {
   motionData.data = 0;
 }
 
 Bvh2::~Bvh2()
 {
+  jointNames.clear();
   deleteJoint(rootJoint);
   if (motionData.data != nullptr)
   {
@@ -133,6 +135,7 @@ void Bvh2::load(const std::string & filename)
     }
     file.close();
   }
+  setJointNames(rootJoint);
 }
 
 void Bvh2::testOutput() const
@@ -148,6 +151,22 @@ void Bvh2::moveTo(unsigned int frame)
 {
   unsigned int startIndex = frame * motionData.numMotionChannels;
   moveJoint(rootJoint, &motionData, startIndex);
+}
+
+void Bvh2::setJointNames(const Joint* const joint)
+{
+  jointNames.push_back(joint->name);
+
+  for (std::vector<Joint*>::const_iterator ct = joint->children.begin();
+       ct != joint->children.end();
+       ++ct)
+  {
+    Joint* _tmp = *ct;
+    if (_tmp->children.size() > 0)
+    {
+      setJointNames(_tmp);
+    }
+  }
 }
 
 Joint * Bvh2::loadJoint(std::istream & stream, Joint * parent)
