@@ -155,6 +155,18 @@ void Bvh2::moveTo(unsigned int frame)
 
 void Bvh2::setJointNames(const Joint* const joint)
 {
+  //jointNames.push_back(joint->name);
+
+  //for (std::vector<Joint*>::const_iterator ct = joint->children.begin();
+  //     ct != joint->children.end();
+  //     ++ct)
+  //{
+  //  Joint* _tmp = *ct;
+  //  if (_tmp->children.size() > 0)
+  //  {
+  //    setJointNames(_tmp);
+  //  }
+  //}
   jointNames.push_back(joint->name);
 
   for (std::vector<Joint*>::const_iterator ct = joint->children.begin();
@@ -162,10 +174,7 @@ void Bvh2::setJointNames(const Joint* const joint)
        ++ct)
   {
     Joint* _tmp = *ct;
-    if (_tmp->children.size() > 0)
-    {
-      setJointNames(_tmp);
-    }
+    setJointNames(_tmp);
   }
 }
 

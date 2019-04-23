@@ -53,6 +53,8 @@ float comPointSize = 8.0;
 
 Bvh2* bvh;
 unsigned int bvhVBO, bvhEBO, bvhVAO;
+std::vector<glm::vec4> bvhVertices;
+std::vector<short> bvhIndices;
 short bvhElements = 0;
 int bvhFrame = 0;
 bool frameChange = false;
@@ -96,13 +98,12 @@ void updateBvh()
   //std::cout << "move to " << frameto << std::endl;
   bvh->moveTo(bvhFrame);
 
-  std::vector<glm::vec4> vertices;
-  std::vector<short> bvhindices;
-
-  processBvh((Joint*)bvh->getRootJoint(), vertices, bvhindices);
+  bvhVertices.clear();
+  bvhIndices.clear();
+  processBvh((Joint*)bvh->getRootJoint(), bvhVertices, bvhIndices);
 
   glBindBuffer(GL_ARRAY_BUFFER, bvhVBO);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(vertices[0]) * vertices.size(), &vertices[0], GL_DYNAMIC_DRAW);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(bvhVertices[0]) * bvhVertices.size(), &bvhVertices[0], GL_DYNAMIC_DRAW);
   glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
@@ -166,10 +167,10 @@ int main()
   bvh = new Bvh2;
   bvh->load("data/example2.bvh");
   bvh->moveTo(bvhFrame);
-  std::vector<glm::vec4> vertices;
-  std::vector<short> bvhindices;
-  processBvh((Joint*)bvh->getRootJoint(), vertices, bvhindices);
-  bvhElements = (short)bvhindices.size();
+  bvhVertices.clear();
+  bvhIndices.clear();
+  processBvh((Joint*)bvh->getRootJoint(), bvhVertices, bvhIndices);
+  bvhElements = (short)bvhIndices.size();
 
   glGenVertexArrays(1, &bvhVAO);
   glGenBuffers(1, &bvhVBO);
@@ -178,13 +179,13 @@ int main()
   glBindVertexArray(bvhVAO);
 
   glBindBuffer(GL_ARRAY_BUFFER, bvhVBO);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(vertices[0]) * vertices.size(), &vertices[0], GL_DYNAMIC_DRAW);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(bvhVertices[0]) * bvhVertices.size(), &bvhVertices[0], GL_DYNAMIC_DRAW);
   glBindBuffer(GL_ARRAY_BUFFER, bvhVBO);
   glEnableVertexAttribArray(0);
   glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, 0);
 
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, bvhEBO);
-  glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(bvhindices[0]) * bvhindices.size(), &bvhindices[0], GL_DYNAMIC_DRAW);
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(bvhIndices[0]) * bvhIndices.size(), &bvhIndices[0], GL_DYNAMIC_DRAW);
 
   Shader bvhShader("shader.vs", "shader.fs");
 
@@ -279,17 +280,20 @@ int main()
 
       ImGui::Text("%.1f FPS", ImGui::GetIO().Framerate);
       ImGui::Text("Application average %.3f ms/frame", 1000.0f / ImGui::GetIO().Framerate);
+      ImGui::Text("Number of frames: %i", bvh->getNumFrames());
       ImGui::End();
     }
 
     // BVH Stats
     {
       ImGui::Begin("BVH Stats");
-      ImGui::Text("Number of frames: %i", bvh->getNumFrames());
 
-      for (const auto& jName : bvh->getJointNames())
+      const auto nameVector = bvh->getJointNames();
+      const auto vertecVector = bvhVertices;
+
+      for (size_t i = 0; i < nameVector.size(); i++)
       {
-        ImGui::Text("Joint: %s", jName.c_str());
+        ImGui::Text("Joint %s at [%.6f, %.6f, %.6f]", nameVector[i].c_str(), bvhVertices[i].x, bvhVertices[i].y, bvhVertices[i].z);
       }
 
       ImGui::End();
