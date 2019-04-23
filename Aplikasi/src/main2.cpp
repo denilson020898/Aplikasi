@@ -253,24 +253,6 @@ int main()
     {
       ImGui::Begin("BVH Player Settings");
 
-      ImGui::PushItemWidth(200);
-      ImGui::ColorEdit3("Floor Color", floorColor);
-      ImGui::SameLine();
-      ImGui::ColorEdit3("Background Color", backgroundColor);
-      ImGui::ColorEdit3("Bone Color ", boneColor);
-      ImGui::SameLine();
-      ImGui::ColorEdit3("Joint Color", jointColor);
-      ImGui::SameLine();
-      ImGui::ColorEdit3("COM Color", comColor);
-
-      ImGui::SliderFloat("Bone Width ", &boneWidth, 0.001f, 10.0f);
-      ImGui::SameLine();
-      ImGui::SliderFloat("Joint Size ", &jointPointSize, 0.001f, 10.0f);
-      ImGui::SameLine();
-      ImGui::SliderFloat("COM Size", &comPointSize, 0.001f, 10.0f);
-      ImGui::PopItemWidth();
-
-
       ImGui::SliderInt("Frame", &bvhFrame, 0, bvh->getNumFrames());
       ImGui::SameLine();
       ImGui::Checkbox("Loop", &loop);
@@ -278,9 +260,55 @@ int main()
       if (ImGui::Button("Play / Pause"))
         frameChange = !frameChange;
 
+      //ImGui::InputInt("Desired FPS", &FPS);
       ImGui::Text("%.1f FPS", ImGui::GetIO().Framerate);
       ImGui::Text("Application average %.3f ms/frame", 1000.0f / ImGui::GetIO().Framerate);
       ImGui::Text("Number of frames: %i", bvh->getNumFrames());
+
+      if (ImGui::CollapsingHeader("Display Settings"))
+      {
+        ImGui::PushItemWidth(200);
+        ImGui::ColorEdit3("Floor Color", floorColor);
+        ImGui::SameLine();
+        ImGui::ColorEdit3("Background Color", backgroundColor);
+        ImGui::SameLine();
+
+        if (ImGui::Button("Reset"))
+        {
+          backgroundColor[0] = 0.2f;
+          backgroundColor[1] = 0.2f;
+          backgroundColor[2] = 0.2f;
+          floorColor[0] = 0.05f;
+          floorColor[1] = 0.05f;
+          floorColor[2] = 0.05f;
+          boneColor[0] = 0.5f;
+          boneColor[1] = 0.5f;
+          boneColor[2] = 0.5f;
+          jointColor[0] = 0.5f;
+          jointColor[1] = 1.0f;
+          jointColor[2] = 1.0f;
+          comColor[0] = 1.0f;
+          comColor[1] = 1.0f;
+          comColor[2] = 0.5f;
+          boneWidth = 2.0;
+          jointPointSize = 4.0;
+          comPointSize = 8.0;
+        }
+
+        ImGui::ColorEdit3("Bone Color ", boneColor);
+        ImGui::SameLine();
+        ImGui::ColorEdit3("Joint Color", jointColor);
+        ImGui::SameLine();
+        ImGui::ColorEdit3("COM Color", comColor);
+
+        ImGui::SliderFloat("Bone Width ", &boneWidth, 0.001f, 10.0f);
+        ImGui::SameLine();
+        ImGui::SliderFloat("Joint Size ", &jointPointSize, 0.001f, 10.0f);
+        ImGui::SameLine();
+        ImGui::SliderFloat("COM Size", &comPointSize, 0.001f, 10.0f);
+        ImGui::PopItemWidth();
+      }
+
       ImGui::End();
     }
 
@@ -288,12 +316,20 @@ int main()
     {
       ImGui::Begin("BVH Stats");
 
-      const auto nameVector = bvh->getJointNames();
-      const auto vertecVector = bvhVertices;
-
+      auto nameVector = bvh->getJointNames();
       for (size_t i = 0; i < nameVector.size(); i++)
       {
-        ImGui::Text("Joint %s at [%.6f, %.6f, %.6f]", nameVector[i].c_str(), bvhVertices[i].x, bvhVertices[i].y, bvhVertices[i].z);
+        if (nameVector[i] == "EndSite")
+          nameVector[i] = nameVector[i - 1] + nameVector[i];
+      }
+      
+      if (ImGui::CollapsingHeader("Joints' World X Y Z Positions"))
+      {
+        for (size_t i = 0; i < nameVector.size(); i++)
+        {
+          glm::vec3 channels = glm::vec3(bvhVertices[i].x, bvhVertices[i].y, bvhVertices[i].z);
+          ImGui::InputFloat3(nameVector[i].c_str(), &channels[0], "%.6f", ImGuiInputTextFlags_ReadOnly);
+        }
       }
 
       ImGui::End();
@@ -309,9 +345,8 @@ int main()
 
     //while (glfwGetTime() < lastTimeFrame + 1.0 / FPS) {
     //}
-    //lastTimeFrame += 1.0 / FPS;
+    //lastTimeFrame += 1.0 / FPS; }
   }
-
   glfwTerminate();
   return 0;
 }
