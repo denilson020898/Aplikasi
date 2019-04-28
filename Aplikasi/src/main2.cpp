@@ -19,7 +19,7 @@
 void frameBufferSizeCallback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window);
 void mouseCallback(GLFWwindow* window, double xpos, double ypos);
-void scrollCallback(GLFWwindow* window, double xoffset, double yoffset);
+//void scrollCallback(GLFWwindow* window, double xoffset, double yoffset);
 
 // renderer settings
 unsigned int screenWidth = 1600;
@@ -124,7 +124,7 @@ int main()
   glfwMakeContextCurrent(window);
   glfwSetFramebufferSizeCallback(window, frameBufferSizeCallback);
   glfwSetCursorPosCallback(window, mouseCallback);
-  glfwSetScrollCallback(window, scrollCallback);
+  //glfwSetScrollCallback(window, scrollCallback);
 
   if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
   {
@@ -132,7 +132,7 @@ int main()
     return -1;
   }
   glEnable(GL_DEPTH_TEST);
-  glfwSwapInterval(1); 
+  //glfwSwapInterval(1); 
 
   // floor
   float floorVertices[] = {
@@ -207,7 +207,7 @@ int main()
   // scale the model if it's too big
   //model = glm::scale(model, glm::vec3(0.25f, 0.25f, 0.25f));
 
-  //double lastTimeFrame = glfwGetTime();
+  double lastTimeFrame = glfwGetTime();
   while (!glfwWindowShouldClose(window))
   {
     glfwPollEvents();
@@ -259,6 +259,12 @@ int main()
       ImGui::SameLine();
       if (ImGui::Button("Play / Pause"))
         frameChange = !frameChange;
+      ImGui::SameLine();
+      if (ImGui::Button("<") && bvhFrame != 0)
+        bvhFrame--;
+      ImGui::SameLine();
+      if (ImGui::Button(">") && bvhFrame != bvh->getNumFrames())
+        bvhFrame++;
 
       //ImGui::InputInt("Desired FPS", &FPS);
       ImGui::Text("%.1f FPS", ImGui::GetIO().Framerate);
@@ -314,7 +320,7 @@ int main()
 
     // BVH Stats
     {
-      ImGui::Begin("BVH Stats");
+      ImGui::Begin("BVH Status");
 
       auto nameVector = bvh->getJointNames();
       for (size_t i = 0; i < nameVector.size(); i++)
@@ -332,6 +338,38 @@ int main()
         }
       }
 
+      if (ImGui::CollapsingHeader("Segments Mass Percents"))
+      {
+      }
+
+      if (ImGui::CollapsingHeader("Segments Length Percents"))
+      {
+      }
+
+      if (ImGui::CollapsingHeader("Body COM"))
+      {
+      }
+
+      if (ImGui::CollapsingHeader("Trunk"))
+      {
+      }
+      if (ImGui::CollapsingHeader("Head"))
+      {
+      }
+      if (ImGui::CollapsingHeader("Left Arm"))
+      {
+      }
+      if (ImGui::CollapsingHeader("Right Arm"))
+      {
+      }
+      if (ImGui::CollapsingHeader("Left Leg"))
+      {
+      }
+      if (ImGui::CollapsingHeader("Right Leg"))
+      {
+      }
+
+
       ImGui::End();
     }
 
@@ -343,9 +381,10 @@ int main()
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     glfwSwapBuffers(window);
 
-    //while (glfwGetTime() < lastTimeFrame + 1.0 / FPS) {
-    //}
-    //lastTimeFrame += 1.0 / FPS; }
+    while (glfwGetTime() < lastTimeFrame + 1.0 / FPS) 
+    {
+    }
+    lastTimeFrame += 1.0 / FPS; 
   }
   glfwTerminate();
   return 0;
@@ -429,12 +468,12 @@ void mouseCallback(GLFWwindow * window, double xpos, double ypos)
   }
 }
 
-void scrollCallback(GLFWwindow * window, double xoffset, double yoffset)
-{
-  if (fov >= 1.0f && fov <= 45.0f)
-    fov -= (float)yoffset;
-  if (fov <= 1.0f)
-    fov = 1.0f;
-  if (fov >= 45.0f)
-    fov = 45.0f;
-}
+//void scrollCallback(GLFWwindow * window, double xoffset, double yoffset)
+//{
+//  if (fov >= 1.0f && fov <= 45.0f)
+//    fov -= (float)yoffset;
+//  if (fov <= 1.0f)
+//    fov = 1.0f;
+//  if (fov >= 45.0f)
+//    fov = 45.0f;
+//}
