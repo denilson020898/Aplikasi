@@ -132,7 +132,7 @@ int main()
     return -1;
   }
   glEnable(GL_DEPTH_TEST);
-  //glfwSwapInterval(1); 
+  glfwSwapInterval(1); 
 
   // floor
   float floorVertices[] = {
@@ -165,7 +165,7 @@ int main()
 
   // bvh
   bvh = new Bvh2;
-  bvh->load("data/example2.bvh");
+  bvh->load("data/example4.bvh");
   bvh->moveTo(bvhFrame);
   bvhVertices.clear();
   bvhIndices.clear();
@@ -207,7 +207,7 @@ int main()
   // scale the model if it's too big
   //model = glm::scale(model, glm::vec3(0.25f, 0.25f, 0.25f));
 
-  double lastTimeFrame = glfwGetTime();
+  //double lastTimeFrame = glfwGetTime();
   while (!glfwWindowShouldClose(window))
   {
     glfwPollEvents();
@@ -334,9 +334,31 @@ int main()
         for (size_t i = 0; i < nameVector.size(); i++)
         {
           glm::vec3 channels = glm::vec3(bvhVertices[i].x, bvhVertices[i].y, bvhVertices[i].z);
+          nameVector[i].append(" [");
+          nameVector[i].append(std::to_string(i));
+          nameVector[i].append("]");
           ImGui::InputFloat3(nameVector[i].c_str(), &channels[0], "%.6f", ImGuiInputTextFlags_ReadOnly);
         }
       }
+
+
+      int index = 13;
+      static constexpr int length = 176;
+      static float linesx[length] = {0};
+      static float linesy[length] = {0};
+      static float linesz[length] = {0};
+      if (frameChange)
+      {
+        linesx[bvhFrame] = bvhVertices[index].x;
+        linesy[bvhFrame] = bvhVertices[index].y;
+        linesz[bvhFrame] = bvhVertices[index].z;
+      }
+      ImGui::PlotLines("Test X", linesx, length, 0, "x", -200.0f, 200.0f, ImVec2(0,100));
+      ImGui::PlotLines("Test Y", linesy, length, 0, "y", -200.0f, 200.0f, ImVec2(0,100));
+      ImGui::PlotLines("Test Z", linesz, length, 0, "z", -200.0f, 200.0f, ImVec2(0,100));
+      ImGui::PlotHistogram("Text H X", linesx, length, 0, "Xh", -200.0f, 200.0f, ImVec2(0, 100));
+      ImGui::PlotHistogram("Text H Y", linesy, length, 0, "Yh", -200.0f, 200.0f, ImVec2(0, 100));
+      ImGui::PlotHistogram("Text H Z", linesz, length, 0, "Zh", -200.0f, 200.0f, ImVec2(0, 100));
 
       if (ImGui::CollapsingHeader("Segments Mass Percents"))
       {
@@ -381,10 +403,10 @@ int main()
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     glfwSwapBuffers(window);
 
-    while (glfwGetTime() < lastTimeFrame + 1.0 / FPS) 
-    {
-    }
-    lastTimeFrame += 1.0 / FPS; 
+    //while (glfwGetTime() < lastTimeFrame + 1.0 / FPS) 
+    //{
+    //}
+    //lastTimeFrame += 1.0 / FPS; 
   }
   glfwTerminate();
   return 0;
