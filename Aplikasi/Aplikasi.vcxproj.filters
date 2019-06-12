@@ -36,9 +36,6 @@
     <ClInclude Include="src\Shader.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="src\bvh.h">
-      <Filter>src</Filter>
-    </ClInclude>
     <ClInclude Include="src\stb_image.h">
       <Filter>src</Filter>
     </ClInclude>
@@ -1148,9 +1145,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Shader.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="src\bvh.cpp">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="src\stb_image.cpp">
