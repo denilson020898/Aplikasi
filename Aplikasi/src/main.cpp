@@ -22,8 +22,8 @@ void mouseCallback(GLFWwindow* window, double xpos, double ypos);
 //void scrollCallback(GLFWwindow* window, double xoffset, double yoffset);
 
 // renderer settings
-unsigned int screenWidth = 1600;
-unsigned int screenHeight = 900;
+unsigned int screenWidth = 1800;
+unsigned int screenHeight = 1000;
 int FPS = 100;
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
@@ -343,6 +343,7 @@ int main()
 
 
       int index = 13;
+      float plotHeight = 400.0f;
       static constexpr int length = 176;
       static float linesx[length] = {0};
       static float linesy[length] = {0};
@@ -353,12 +354,12 @@ int main()
         linesy[bvhFrame] = bvhVertices[index].y;
         linesz[bvhFrame] = bvhVertices[index].z;
       }
-      ImGui::PlotLines("Test X", linesx, length, 0, "x", -200.0f, 200.0f, ImVec2(0,100));
-      ImGui::PlotLines("Test Y", linesy, length, 0, "y", -200.0f, 200.0f, ImVec2(0,100));
-      ImGui::PlotLines("Test Z", linesz, length, 0, "z", -200.0f, 200.0f, ImVec2(0,100));
-      ImGui::PlotHistogram("Text H X", linesx, length, 0, "Xh", -200.0f, 200.0f, ImVec2(0, 100));
-      ImGui::PlotHistogram("Text H Y", linesy, length, 0, "Yh", -200.0f, 200.0f, ImVec2(0, 100));
-      ImGui::PlotHistogram("Text H Z", linesz, length, 0, "Zh", -200.0f, 200.0f, ImVec2(0, 100));
+      ImGui::PlotLines("Test X", linesx, length, 0, "x", -150.0f, 150.0f, ImVec2(0,plotHeight));
+      ImGui::PlotLines("Test Y", linesy, length, 0, "y", -150.0f, 150.0f, ImVec2(0,plotHeight));
+      ImGui::PlotLines("Test Z", linesz, length, 0, "z", -150.0f, 150.0f, ImVec2(0,plotHeight));
+      ImGui::PlotHistogram("Text H X", linesx, length, 0, "Xh", -150.0f, 150.0f, ImVec2(0, plotHeight));
+      ImGui::PlotHistogram("Text H Y", linesy, length, 0, "Yh", -150.0f, 150.0f, ImVec2(0, plotHeight));
+      ImGui::PlotHistogram("Text H Z", linesz, length, 0, "Zh", -150.0f, 150.0f, ImVec2(0, plotHeight));
 
       if (ImGui::CollapsingHeader("Segments Mass Percents"))
       {

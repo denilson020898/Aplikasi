@@ -481,7 +481,7 @@
   <ItemGroup>
     <ClCompile Include="src\bvh2.cpp" />
     <ClCompile Include="src\FPSLimiter.cpp" />
-    <ClCompile Include="src\main2.cpp" />
+    <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\Shader.cpp" />
     <ClCompile Include="src\bvh.cpp" />
     <ClCompile Include="src\stb_image.cpp" />
