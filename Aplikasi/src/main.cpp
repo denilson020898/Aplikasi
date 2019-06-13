@@ -48,6 +48,7 @@ float comColor[3] = {1.0f, 1.0f, 0.5f};
 
 // COG properties
 int selectedGender = 0;
+float totalBodyWeight = 60.0f;
 
 float headNeckMassPercent[2] = { 6.94f  , 6.68f  };
 float trunkMassPercent[2]    = { 43.46f , 42.58f };
@@ -80,6 +81,9 @@ short bvhElements = 0;
 int bvhFrame = 0;
 bool frameChange = false;
 
+unsigned int cogVBO, cogVAO;
+std::vector<glm::vec4> cogVertices;
+
 void processBvh(Joint * joint, std::vector<glm::vec4>& vertices, 
                 std::vector<short>& indices, short parentIndex = 0)
 {
@@ -95,6 +99,58 @@ void processBvh(Joint * joint, std::vector<glm::vec4>& vertices,
   {
     processBvh(child, vertices, indices, myindex);
   }
+}
+
+glm::vec4 myLerp(glm::vec4 x, glm::vec4 y, float t) {
+  return x * (1.f - t / 100.0f) + y * (t / 100.0f);
+}
+
+void processCOG(const std::vector<glm::vec4>& bvhVertices, std::vector<glm::vec4>& cogVertices)
+{
+  cogVertices.clear();
+
+  // head
+  cogVertices.push_back(myLerp(bvhVertices[3], bvhVertices[5], headNeckLengthPercent[selectedGender]));
+  // trunk
+  cogVertices.push_back(myLerp(bvhVertices[0], bvhVertices[2], headNeckLengthPercent[selectedGender]));
+  // left upper arm
+  cogVertices.push_back(myLerp(bvhVertices[6], bvhVertices[8], headNeckLengthPercent[selectedGender]));
+  // right upper arm
+  cogVertices.push_back(myLerp(bvhVertices[11], bvhVertices[13], headNeckLengthPercent[selectedGender]));
+  // left fore arm
+  cogVertices.push_back(myLerp(bvhVertices[8], bvhVertices[9], headNeckLengthPercent[selectedGender]));
+  // right fore arm
+  cogVertices.push_back(myLerp(bvhVertices[13], bvhVertices[14], headNeckLengthPercent[selectedGender]));
+  // left hand
+  cogVertices.push_back(myLerp(bvhVertices[9], bvhVertices[10], headNeckLengthPercent[selectedGender]));
+  // right hand
+  cogVertices.push_back(myLerp(bvhVertices[14], bvhVertices[15], headNeckLengthPercent[selectedGender]));
+  // left thigh
+  cogVertices.push_back(myLerp(bvhVertices[16], bvhVertices[17], headNeckLengthPercent[selectedGender]));
+  // right thigh
+  cogVertices.push_back(myLerp(bvhVertices[21], bvhVertices[22], headNeckLengthPercent[selectedGender]));
+  // left shank
+  cogVertices.push_back(myLerp(bvhVertices[17], bvhVertices[18], headNeckLengthPercent[selectedGender]));
+  // right shank
+  cogVertices.push_back(myLerp(bvhVertices[22], bvhVertices[23], headNeckLengthPercent[selectedGender]));
+  // left foot
+  cogVertices.push_back(myLerp(bvhVertices[18], bvhVertices[20], headNeckLengthPercent[selectedGender]));
+  // right foot
+  cogVertices.push_back(myLerp(bvhVertices[23], bvhVertices[25], headNeckLengthPercent[selectedGender]));
+
+  // BODY COG
+  
+
+  glGenVertexArrays(1, &cogVAO);
+  glGenBuffers(1, &cogVBO);
+
+  glBindVertexArray(cogVAO);
+
+  glBindBuffer(GL_ARRAY_BUFFER, cogVBO);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(cogVertices[0]) * cogVertices.size(), &cogVertices[0], GL_DYNAMIC_DRAW);
+  glBindBuffer(GL_ARRAY_BUFFER, cogVBO);
+  glEnableVertexAttribArray(0);
+  glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, 0);
 }
 
 void updateBvh()
@@ -210,6 +266,8 @@ int main()
 
   Shader bvhShader("shader.vs", "shader.fs");
 
+
+
   // ImGui Context
   ImGui::CreateContext();
   ImGuiIO& io = ImGui::GetIO();
@@ -269,6 +327,12 @@ int main()
     glDrawElements(GL_LINES, bvhElements, GL_UNSIGNED_SHORT, (void*)0);
     bvhShader.setVec3("ourColor", jointColor[0], jointColor[1], jointColor[2]);
     glDrawElements(GL_POINTS, bvhElements, GL_UNSIGNED_SHORT, (void*)0);
+
+    // cog
+    processCOG(bvhVertices, cogVertices);
+    floorShader.setVec3("ourColor", comColor[0], comColor[1], comColor[2]);
+    glBindVertexArray(cogVAO);
+    glDrawArrays(GL_POINTS, 0, cogVertices.size());
 
     // BVH Player Settings;
     {
@@ -397,6 +461,7 @@ int main()
         ImGui::NextColumn();
         ImGui::RadioButton("Female", &selectedGender, 1);
         ImGui::Columns(1);
+        ImGui::InputFloat("Total Body Weight", &totalBodyWeight);
         ImGui::Separator();
 
         ImGui::Text(" ");
@@ -658,3 +723,4 @@ void mouseCallback(GLFWwindow * window, double xpos, double ypos)
 //  if (fov >= 45.0f)
 //    fov = 45.0f;
 //}
+
