@@ -46,6 +46,27 @@ float boneColor[3] = {0.5f, 0.5f, 0.5f};
 float jointColor[3] = {0.5f, 1.0f, 1.0f};
 float comColor[3] = {1.0f, 1.0f, 0.5f};
 
+// COG properties
+int selectedGender = 0;
+
+float headNeckMassPercent[2] = { 6.94f  , 6.68f  };
+float trunkMassPercent[2]    = { 43.46f , 42.58f };
+float upperArmMassPercent[2] = { 2.71f  , 2.55f  };
+float foreArmMassPercent[2]  = { 1.62f  , 1.38f  };
+float handMassPercent[2]     = { 0.61f  , 0.56f  };
+float thighMassPercent[2]    = { 14.16f , 14.78f };
+float shankMassPercent[2]    = { 4.33f  , 4.81f  };
+float footMassPercent[2]     = { 1.37f  , 1.29f  };
+
+float headNeckLengthPercent[2] = { 50.02f , 48.41f };
+float trunkLengthPercent[2]    = { 43.10f , 37.82f };
+float upperArmLengthPercent[2] = { 57.72f , 57.54f };
+float foreArmLengthPercent[2]  = { 45.74f , 45.59f };
+float handLengthPercent[2]     = { 79.00f , 74.74f };
+float thighLengthPercent[2]    = { 40.95f , 36.12f };
+float shankLengthPercent[2]    = { 43.95f , 43.52f };
+float footLengthPercent[2]     = { 44.15f , 40.14f };
+
 // bvh settings
 float boneWidth = 2.0;
 float jointPointSize = 4.0;
@@ -328,7 +349,28 @@ int main()
         if (nameVector[i] == "EndSite")
           nameVector[i] = nameVector[i - 1] + nameVector[i];
       }
-      
+
+      if (ImGui::CollapsingHeader("PlotLines Example")) {
+        int index = 13;
+        float plotHeight = 200.0f;
+        static constexpr int length = 176;
+        static float linesx[length] = { 0 };
+        static float linesy[length] = { 0 };
+        static float linesz[length] = { 0 };
+        if (frameChange)
+        {
+          linesx[bvhFrame] = bvhVertices[index].x;
+          linesy[bvhFrame] = bvhVertices[index].y;
+          linesz[bvhFrame] = bvhVertices[index].z;
+        }
+        //ImGui::PlotLines("Test X", linesx, length, 0, "x", -150.0f, 150.0f, ImVec2(0,plotHeight));
+        //ImGui::PlotLines("Test Y", linesy, length, 0, "y", -150.0f, 150.0f, ImVec2(0,plotHeight));
+        //ImGui::PlotLines("Test Z", linesz, length, 0, "z", -150.0f, 150.0f, ImVec2(0,plotHeight));
+        ImGui::PlotHistogram("Text X", linesx, length, 0, "X", -150.0f, 150.0f, ImVec2(0, plotHeight));
+        ImGui::PlotHistogram("Text Y", linesy, length, 0, "Y", -150.0f, 150.0f, ImVec2(0, plotHeight));
+        ImGui::PlotHistogram("Text Z", linesz, length, 0, "Z", -150.0f, 150.0f, ImVec2(0, plotHeight));
+      }
+
       if (ImGui::CollapsingHeader("Joints' World X Y Z Positions"))
       {
         for (size_t i = 0; i < nameVector.size(); i++)
@@ -341,32 +383,149 @@ int main()
         }
       }
 
-
-      int index = 4;
-      float plotHeight = 200.0f;
-      static constexpr int length = 176;
-      static float linesx[length] = {0};
-      static float linesy[length] = {0};
-      static float linesz[length] = {0};
-      if (frameChange)
+      if (ImGui::CollapsingHeader("COG Properties"))
       {
-        linesx[bvhFrame] = bvhVertices[index].x;
-        linesy[bvhFrame] = bvhVertices[index].y;
-        linesz[bvhFrame] = bvhVertices[index].z;
-      }
-      ImGui::PlotLines("Test X", linesx, length, 0, "x", -150.0f, 150.0f, ImVec2(0,plotHeight));
-      ImGui::PlotLines("Test Y", linesy, length, 0, "y", -150.0f, 150.0f, ImVec2(0,plotHeight));
-      ImGui::PlotLines("Test Z", linesz, length, 0, "z", -150.0f, 150.0f, ImVec2(0,plotHeight));
-      //ImGui::PlotHistogram("Text H X", linesx, length, 0, "Xh", -150.0f, 150.0f, ImVec2(0, plotHeight));
-      //ImGui::PlotHistogram("Text H Y", linesy, length, 0, "Yh", -150.0f, 150.0f, ImVec2(0, plotHeight));
-      //ImGui::PlotHistogram("Text H Z", linesz, length, 0, "Zh", -150.0f, 150.0f, ImVec2(0, plotHeight));
+        ImGui::Text(" ");
 
-      if (ImGui::CollapsingHeader("Segments Mass Percents"))
-      {
-      }
+        ImGui::Separator();
+        ImGui::Columns(1);
+        ImGui::Text("Gender");
+        ImGui::Separator();
+        ImGui::Columns(1);
+        ImGui::Columns(2);
+        ImGui::RadioButton("Male", &selectedGender, 0);
+        ImGui::NextColumn();
+        ImGui::RadioButton("Female", &selectedGender, 1);
+        ImGui::Columns(1);
+        ImGui::Separator();
 
-      if (ImGui::CollapsingHeader("Segments Length Percents"))
-      {
+        ImGui::Text(" ");
+
+        ImGui::Columns(1);
+        ImGui::Separator();
+        ImGui::Text("Segment Mass Percent");
+
+        ImGui::Columns(2);
+        ImGui::Separator();
+        ImGui::InputFloat("Head & Neck Mass Male", &headNeckMassPercent[0]); 
+        ImGui::NextColumn();
+        ImGui::InputFloat("Head & Neck Mass Female", &headNeckMassPercent[1]); 
+        ImGui::Columns(1);
+
+        ImGui::Columns(2);
+        ImGui::Separator();
+        ImGui::InputFloat("Trunk Mass Male", &trunkMassPercent[0]); 
+        ImGui::NextColumn();
+        ImGui::InputFloat("Trunk Mass Female", &trunkMassPercent[1]); 
+        ImGui::Columns(1);
+
+        ImGui::Columns(2);
+        ImGui::Separator();
+        ImGui::InputFloat("Upper Arm Mass Male", &upperArmMassPercent[0]); 
+        ImGui::NextColumn();
+        ImGui::InputFloat("Upper Arm Mass Female", &upperArmMassPercent[1]); 
+        ImGui::Columns(1);
+
+        ImGui::Columns(2);
+        ImGui::Separator();
+        ImGui::InputFloat("Fore Arm Mass Male", &foreArmMassPercent[0]); 
+        ImGui::NextColumn();
+        ImGui::InputFloat("Fore Arm Mass Female", &foreArmMassPercent[1]); 
+        ImGui::Columns(1);
+
+        ImGui::Columns(2);
+        ImGui::Separator();
+        ImGui::InputFloat("Hand Mass Male", &handMassPercent[0]); 
+        ImGui::NextColumn();
+        ImGui::InputFloat("Hand Mass Female", &handMassPercent[1]); 
+        ImGui::Columns(1);
+
+        ImGui::Columns(2);
+        ImGui::Separator();
+        ImGui::InputFloat("Thigh Mass Male", &thighMassPercent[0]); 
+        ImGui::NextColumn();
+        ImGui::InputFloat("Thigh Mass Female", &thighMassPercent[1]); 
+        ImGui::Columns(1);
+
+        ImGui::Columns(2);
+        ImGui::Separator();
+        ImGui::InputFloat("Shank Mass Male", &shankMassPercent[0]); 
+        ImGui::NextColumn();
+        ImGui::InputFloat("Shank Mass Female", &shankMassPercent[1]); 
+        ImGui::Columns(1);
+
+        ImGui::Columns(2);
+        ImGui::Separator();
+        ImGui::InputFloat("Foot Mass Male", &footMassPercent[0]); 
+        ImGui::NextColumn();
+        ImGui::InputFloat("Foot Mass Female", &footMassPercent[1]); 
+        ImGui::Columns(1);
+        ImGui::Separator();
+
+        ImGui::Text(" ");
+
+        ImGui::Columns(1);
+        ImGui::Separator();
+        ImGui::Text("Segment Length Percent");
+
+        ImGui::Columns(2);
+        ImGui::Separator();
+        ImGui::InputFloat("Head & Neck Length Male", &headNeckLengthPercent[0]); 
+        ImGui::NextColumn();
+        ImGui::InputFloat("Head & Neck Length Female", &headNeckLengthPercent[1]); 
+        ImGui::Columns(1);
+
+        ImGui::Columns(2);
+        ImGui::Separator();
+        ImGui::InputFloat("Trunk Length Male", &trunkLengthPercent[0]); 
+        ImGui::NextColumn();
+        ImGui::InputFloat("Trunk Length Female", &trunkLengthPercent[1]); 
+        ImGui::Columns(1);
+
+        ImGui::Columns(2);
+        ImGui::Separator();
+        ImGui::InputFloat("Upper Arm Length Male", &upperArmLengthPercent[0]); 
+        ImGui::NextColumn();
+        ImGui::InputFloat("Upper Arm Length Female", &upperArmLengthPercent[1]); 
+        ImGui::Columns(1);
+
+        ImGui::Columns(2);
+        ImGui::Separator();
+        ImGui::InputFloat("Fore Arm Length Male", &foreArmLengthPercent[0]); 
+        ImGui::NextColumn();
+        ImGui::InputFloat("Fore Arm Length Female", &foreArmLengthPercent[1]); 
+        ImGui::Columns(1);
+
+        ImGui::Columns(2);
+        ImGui::Separator();
+        ImGui::InputFloat("Hand Length Male", &handLengthPercent[0]); 
+        ImGui::NextColumn();
+        ImGui::InputFloat("Hand Length Female", &handLengthPercent[1]); 
+        ImGui::Columns(1);
+
+        ImGui::Columns(2);
+        ImGui::Separator();
+        ImGui::InputFloat("Thigh Length Male", &thighLengthPercent[0]); 
+        ImGui::NextColumn();
+        ImGui::InputFloat("Thigh Length Female", &thighLengthPercent[1]); 
+        ImGui::Columns(1);
+
+        ImGui::Columns(2);
+        ImGui::Separator();
+        ImGui::InputFloat("Shank Length Male", &shankLengthPercent[0]); 
+        ImGui::NextColumn();
+        ImGui::InputFloat("Shank Length Female", &shankLengthPercent[1]); 
+        ImGui::Columns(1);
+
+        ImGui::Columns(2);
+        ImGui::Separator();
+        ImGui::InputFloat("Foot Length Male", &footLengthPercent[0]); 
+        ImGui::NextColumn();
+        ImGui::InputFloat("Foot Length Female", &footLengthPercent[1]); 
+        ImGui::Columns(1);
+        ImGui::Separator();
+
+        ImGui::Text(" ");
       }
 
       if (ImGui::CollapsingHeader("Body COM"))
@@ -391,7 +550,6 @@ int main()
       if (ImGui::CollapsingHeader("Right Leg"))
       {
       }
-
 
       ImGui::End();
     }
