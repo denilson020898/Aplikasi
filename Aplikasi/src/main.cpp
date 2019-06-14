@@ -31,7 +31,6 @@ bool renderBones = true;
 bool renderJoints = true;
 bool renderSegmentCOM = false;
 bool renderBodyCOM = true;
-bool trailing = false;
 
 // camera settings
 glm::vec3 cameraPos = glm::vec3(100.0f, 70.0f, 300.0f);
@@ -91,6 +90,8 @@ std::vector<glm::vec4> comVertices;
 unsigned int segmentsCogVBO, segmentsCogVAO;
 std::vector<glm::vec4> segmentsCogVertices;
 
+/*################################################################################################################################################*/
+
 void processBvh(Joint* joint, std::vector<glm::vec4>& vertices,
   std::vector<short>& indices, short parentIndex = 0)
 {
@@ -118,33 +119,21 @@ void processCOM(const std::vector<glm::vec4>& bvhVertices, std::vector<glm::vec4
   segmentsCogVertices.clear();
   comVertices.clear();
 
-  // head
   glm::vec4 headNeck = myLerp(bvhVertices[3], bvhVertices[5], headNeckLengthPercent[selectedGender]);
-  // trunk
   glm::vec4 trunk = myLerp(bvhVertices[0], bvhVertices[2], trunkLengthPercent[selectedGender]);
-  // left upper arm
   glm::vec4 leftUpperArm = myLerp(bvhVertices[6], bvhVertices[8], upperArmLengthPercent[selectedGender]);
-  // right upper arm
   glm::vec4 rightUpperArm = myLerp(bvhVertices[11], bvhVertices[13], upperArmLengthPercent[selectedGender]);
-  // left fore arm
   glm::vec4 leftForeArm = myLerp(bvhVertices[8], bvhVertices[9], foreArmLengthPercent[selectedGender]);
-  // right fore arm
   glm::vec4 rightForeArm = myLerp(bvhVertices[13], bvhVertices[14], foreArmLengthPercent[selectedGender]);
-  // left hand
+
+  // TODO:(denilson) WRIST JOINT to MCP3(the middle finger base joint!), make some interpolation
   glm::vec4 leftHand = myLerp(bvhVertices[9], bvhVertices[10], handLengthPercent[selectedGender]);
-  // right hand
   glm::vec4 rightHand = myLerp(bvhVertices[14], bvhVertices[15], handLengthPercent[selectedGender]);
-  // left thigh
   glm::vec4 leftThigh = myLerp(bvhVertices[16], bvhVertices[17], thighLengthPercent[selectedGender]);
-  // right thigh
   glm::vec4 rightThigh = myLerp(bvhVertices[21], bvhVertices[22], thighLengthPercent[selectedGender]);
-  // left shank
   glm::vec4 leftShank = myLerp(bvhVertices[17], bvhVertices[18], shankLengthPercent[selectedGender]);
-  // right shank
   glm::vec4 rightShank = myLerp(bvhVertices[22], bvhVertices[23], shankLengthPercent[selectedGender]);
-  // left foot
   glm::vec4 leftFoot = myLerp(bvhVertices[18], bvhVertices[20], footLengthPercent[selectedGender]);
-  // right foot
   glm::vec4 rightFoot = myLerp(bvhVertices[23], bvhVertices[25], footLengthPercent[selectedGender]);
 
   // body COM
@@ -273,6 +262,8 @@ void updateBvh()
   glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
+/*################################################################################################################################################*/
+
 int main(int argc, char* argv[])
 {
   glfwInit();
@@ -379,110 +370,111 @@ int main(int argc, char* argv[])
   // scale the model if it's too big
   //model = glm::scale(model, glm::vec3(0.25f, 0.25f, 0.25f));
 
+  int graphFrames = bvh->getNumFrames() + 1;
   // body com graph
   std::vector<std::vector<float>> comGraph;
   comGraph.resize(3);
-  comGraph[0].resize(bvh->getNumFrames());
-  comGraph[1].resize(bvh->getNumFrames());
-  comGraph[2].resize(bvh->getNumFrames());
+  comGraph[0].resize(graphFrames);
+  comGraph[1].resize(graphFrames);
+  comGraph[2].resize(graphFrames);
 
   // head neck com graph
   std::vector<std::vector<float>> headNeckGraph;
   headNeckGraph.resize(3);
-  headNeckGraph[0].resize(bvh->getNumFrames());
-  headNeckGraph[1].resize(bvh->getNumFrames());
-  headNeckGraph[2].resize(bvh->getNumFrames());
+  headNeckGraph[0].resize(graphFrames);
+  headNeckGraph[1].resize(graphFrames);
+  headNeckGraph[2].resize(graphFrames);
 
   // trunk com graph
   std::vector<std::vector<float>> trunkGraph;
   trunkGraph.resize(3);
-  trunkGraph[0].resize(bvh->getNumFrames());
-  trunkGraph[1].resize(bvh->getNumFrames());
-  trunkGraph[2].resize(bvh->getNumFrames());
+  trunkGraph[0].resize(graphFrames);
+  trunkGraph[1].resize(graphFrames);
+  trunkGraph[2].resize(graphFrames);
 
   // left upper arm com graph
   std::vector<std::vector<float>> leftUpperArmGraph;
   leftUpperArmGraph.resize(3);
-  leftUpperArmGraph[0].resize(bvh->getNumFrames());
-  leftUpperArmGraph[1].resize(bvh->getNumFrames());
-  leftUpperArmGraph[2].resize(bvh->getNumFrames());
+  leftUpperArmGraph[0].resize(graphFrames);
+  leftUpperArmGraph[1].resize(graphFrames);
+  leftUpperArmGraph[2].resize(graphFrames);
 
   // right upper arm com graph
   std::vector<std::vector<float>> rightUpperArmGraph;
   rightUpperArmGraph.resize(3);
-  rightUpperArmGraph[0].resize(bvh->getNumFrames());
-  rightUpperArmGraph[1].resize(bvh->getNumFrames());
-  rightUpperArmGraph[2].resize(bvh->getNumFrames());
+  rightUpperArmGraph[0].resize(graphFrames);
+  rightUpperArmGraph[1].resize(graphFrames);
+  rightUpperArmGraph[2].resize(graphFrames);
 
   // left fore arm com graph
   std::vector<std::vector<float>> leftForeArmGraph;
   leftForeArmGraph.resize(3);
-  leftForeArmGraph[0].resize(bvh->getNumFrames());
-  leftForeArmGraph[1].resize(bvh->getNumFrames());
-  leftForeArmGraph[2].resize(bvh->getNumFrames());
+  leftForeArmGraph[0].resize(graphFrames);
+  leftForeArmGraph[1].resize(graphFrames);
+  leftForeArmGraph[2].resize(graphFrames);
 
   // right fore arm com graph
   std::vector<std::vector<float>> rightForeArmGraph;
   rightForeArmGraph.resize(3);
-  rightForeArmGraph[0].resize(bvh->getNumFrames());
-  rightForeArmGraph[1].resize(bvh->getNumFrames());
-  rightForeArmGraph[2].resize(bvh->getNumFrames());
+  rightForeArmGraph[0].resize(graphFrames);
+  rightForeArmGraph[1].resize(graphFrames);
+  rightForeArmGraph[2].resize(graphFrames);
 
   // left hand com graph
   std::vector<std::vector<float>> leftHandGraph;
   leftHandGraph.resize(3);
-  leftHandGraph[0].resize(bvh->getNumFrames());
-  leftHandGraph[1].resize(bvh->getNumFrames());
-  leftHandGraph[2].resize(bvh->getNumFrames());
+  leftHandGraph[0].resize(graphFrames);
+  leftHandGraph[1].resize(graphFrames);
+  leftHandGraph[2].resize(graphFrames);
 
   // right hand com graph
   std::vector<std::vector<float>> rightHandGraph;
   rightHandGraph.resize(3);
-  rightHandGraph[0].resize(bvh->getNumFrames());
-  rightHandGraph[1].resize(bvh->getNumFrames());
-  rightHandGraph[2].resize(bvh->getNumFrames());
+  rightHandGraph[0].resize(graphFrames);
+  rightHandGraph[1].resize(graphFrames);
+  rightHandGraph[2].resize(graphFrames);
 
   // left thigh com graph
   std::vector<std::vector<float>> leftThighGraph;
   leftThighGraph.resize(3);
-  leftThighGraph[0].resize(bvh->getNumFrames());
-  leftThighGraph[1].resize(bvh->getNumFrames());
-  leftThighGraph[2].resize(bvh->getNumFrames());
+  leftThighGraph[0].resize(graphFrames);
+  leftThighGraph[1].resize(graphFrames);
+  leftThighGraph[2].resize(graphFrames);
 
   // right thigh com graph
   std::vector<std::vector<float>> rightThighGraph;
   rightThighGraph.resize(3);
-  rightThighGraph[0].resize(bvh->getNumFrames());
-  rightThighGraph[1].resize(bvh->getNumFrames());
-  rightThighGraph[2].resize(bvh->getNumFrames());
+  rightThighGraph[0].resize(graphFrames);
+  rightThighGraph[1].resize(graphFrames);
+  rightThighGraph[2].resize(graphFrames);
 
   // left shank com graph
   std::vector<std::vector<float>> leftShankGraph;
   leftShankGraph.resize(3);
-  leftShankGraph[0].resize(bvh->getNumFrames());
-  leftShankGraph[1].resize(bvh->getNumFrames());
-  leftShankGraph[2].resize(bvh->getNumFrames());
+  leftShankGraph[0].resize(graphFrames);
+  leftShankGraph[1].resize(graphFrames);
+  leftShankGraph[2].resize(graphFrames);
 
   // right shank com graph
   std::vector<std::vector<float>> rightShankGraph;
   rightShankGraph.resize(3);
-  rightShankGraph[0].resize(bvh->getNumFrames());
-  rightShankGraph[1].resize(bvh->getNumFrames());
-  rightShankGraph[2].resize(bvh->getNumFrames());
+  rightShankGraph[0].resize(graphFrames);
+  rightShankGraph[1].resize(graphFrames);
+  rightShankGraph[2].resize(graphFrames);
 
   // left foot com graph
   std::vector<std::vector<float>> leftFootGraph;
   leftFootGraph.resize(3);
-  leftFootGraph[0].resize(bvh->getNumFrames());
-  leftFootGraph[1].resize(bvh->getNumFrames());
-  leftFootGraph[2].resize(bvh->getNumFrames());
+  leftFootGraph[0].resize(graphFrames);
+  leftFootGraph[1].resize(graphFrames);
+  leftFootGraph[2].resize(graphFrames);
 
   // right foot com graph
   std::vector<std::vector<float>> rightFootGraph;
   rightFootGraph.resize(3);
-  rightFootGraph[0].resize(bvh->getNumFrames());
-  rightFootGraph[1].resize(bvh->getNumFrames());
-  rightFootGraph[2].resize(bvh->getNumFrames());
+  rightFootGraph[0].resize(graphFrames);
+  rightFootGraph[1].resize(graphFrames);
+  rightFootGraph[2].resize(graphFrames);
 
   //double lastTimeFrame = glfwGetTime();
   while (!glfwWindowShouldClose(window))
@@ -576,7 +568,6 @@ int main(int argc, char* argv[])
       ImGui::SameLine();
       ImGui::Checkbox("Render Body COM", &renderBodyCOM);
       ImGui::SameLine();
-      ImGui::Checkbox("Trailing", &trailing);
 
       //ImGui::InputInt("Desired FPS", &FPS);
       ImGui::Text("%.1f FPS", ImGui::GetIO().Framerate);
@@ -803,23 +794,243 @@ int main(int argc, char* argv[])
 
       if (ImGui::CollapsingHeader("Body COM"))
       {
-        if (frameChange)
-        {
-          comGraph[0][bvhFrame] = comVertices[0].x;
-          comGraph[1][bvhFrame] = comVertices[0].y;
-          comGraph[2][bvhFrame] = comVertices[0].z;
-        }
-        static float comGraphXHeight = 100.0f;
-        static float comGraphYHeight = 100.0f;
-        static float comGraphZHeight = 100.0f;
-        ImGui::PlotHistogram("Body COM X", &comGraph[0][0], bvh->getNumFrames(), 0, "", -comGraphXHeight, comGraphXHeight, ImVec2(0, 100), 4);
+        comGraph[0][bvhFrame] = comVertices[0].x;
+        comGraph[1][bvhFrame] = comVertices[0].y;
+        comGraph[2][bvhFrame] = comVertices[0].z;
+        static float comGraphXHeight = 150.0f;
+        static float comGraphYHeight = 150.0f;
+        static float comGraphZHeight = 150.0f;
+        ImGui::PlotHistogram("Body COM X", &comGraph[0][0], graphFrames, 0, "", -comGraphXHeight, comGraphXHeight, ImVec2(0, 100), 4);
         ImGui::SliderFloat("Body COM X Height", &comGraphXHeight, 1, 200);
-        ImGui::PlotHistogram("Body COM Y", &comGraph[1][0], bvh->getNumFrames(), 0, "", -comGraphYHeight, comGraphYHeight, ImVec2(0, 100), 4);
+        ImGui::PlotHistogram("Body COM Y", &comGraph[1][0], graphFrames, 0, "", -comGraphYHeight, comGraphYHeight, ImVec2(0, 100), 4);
         ImGui::SliderFloat("Body COM Y Height", &comGraphYHeight, 1, 200);
-        ImGui::PlotHistogram("Body COM Z", &comGraph[2][0], bvh->getNumFrames(), 0, "", -comGraphZHeight, comGraphZHeight, ImVec2(0, 100), 4);
+        ImGui::PlotHistogram("Body COM Z", &comGraph[2][0], graphFrames, 0, "", -comGraphZHeight, comGraphZHeight, ImVec2(0, 100), 4);
         ImGui::SliderFloat("Body COM Z Height", &comGraphZHeight, 1, 200);
       }
 
+      if (ImGui::CollapsingHeader("Head & Neck COM"))
+      {
+        headNeckGraph[0][bvhFrame] = segmentsCogVertices[0].x;
+        headNeckGraph[1][bvhFrame] = segmentsCogVertices[0].y;
+        headNeckGraph[2][bvhFrame] = segmentsCogVertices[0].z;
+        static float headNeckGraphXHeight = 150.0f;
+        static float headNeckGraphYHeight = 150.0f;
+        static float headNeckGraphZHeight = 150.0f;
+        ImGui::PlotHistogram("Head Neck COM X", &headNeckGraph[0][0], graphFrames, 0, "", -headNeckGraphXHeight, headNeckGraphXHeight, ImVec2(0, 100), 4);
+        ImGui::SliderFloat("Head Neck COM X Height", &headNeckGraphXHeight, 1, 200);
+        ImGui::PlotHistogram("Head Neck COM Y", &headNeckGraph[1][0], graphFrames, 0, "", -headNeckGraphYHeight, headNeckGraphYHeight, ImVec2(0, 100), 4);
+        ImGui::SliderFloat("Head Neck COM Y Height", &headNeckGraphYHeight, 1, 200);
+        ImGui::PlotHistogram("Head Neck COM Z", &headNeckGraph[2][0], graphFrames, 0, "", -headNeckGraphZHeight, headNeckGraphZHeight, ImVec2(0, 100), 4);
+        ImGui::SliderFloat("Head Neck COM Z Height", &headNeckGraphZHeight, 1, 200);
+      }
+
+      if (ImGui::CollapsingHeader("Trunk COM"))
+      {
+        trunkGraph[0][bvhFrame] = segmentsCogVertices[1].x;
+        trunkGraph[1][bvhFrame] = segmentsCogVertices[1].y;
+        trunkGraph[2][bvhFrame] = segmentsCogVertices[1].z;
+        static float trunkGraphXHeight = 150.0f;
+        static float trunkGraphYHeight = 150.0f;
+        static float trunkGraphZHeight = 150.0f;
+        ImGui::PlotHistogram("Trunk COM X", &trunkGraph[0][0], graphFrames, 0, "", -trunkGraphXHeight, trunkGraphXHeight, ImVec2(0, 100), 4);
+        ImGui::SliderFloat("Trunk COM X Height", &trunkGraphXHeight, 1, 200);
+        ImGui::PlotHistogram("Trunk COM Y", &trunkGraph[1][0], graphFrames, 0, "", -trunkGraphYHeight, trunkGraphYHeight, ImVec2(0, 100), 4);
+        ImGui::SliderFloat("Trunk COM Y Height", &trunkGraphYHeight, 1, 200);
+        ImGui::PlotHistogram("Trunk COM Z", &trunkGraph[2][0], graphFrames, 0, "", -trunkGraphZHeight, trunkGraphZHeight, ImVec2(0, 100), 4);
+        ImGui::SliderFloat("Trunk COM Z Height", &trunkGraphZHeight, 1, 200);
+      }
+
+      if (ImGui::CollapsingHeader("Left Upper Arm COM"))
+      {
+        leftUpperArmGraph[0][bvhFrame] = segmentsCogVertices[2].x;
+        leftUpperArmGraph[1][bvhFrame] = segmentsCogVertices[2].y;
+        leftUpperArmGraph[2][bvhFrame] = segmentsCogVertices[2].z;
+        static float leftUpperArmGraphXHeight = 150.0f;
+        static float leftUpperArmGraphYHeight = 150.0f;
+        static float leftUpperArmGraphZHeight = 150.0f;
+        ImGui::PlotHistogram("Left Upper Arm COM X", &leftUpperArmGraph[0][0], graphFrames, 0, "", -leftUpperArmGraphXHeight, leftUpperArmGraphXHeight, ImVec2(0, 100), 4);
+        ImGui::SliderFloat("Left Upper Arm COM X Height", &leftUpperArmGraphXHeight, 1, 200);
+        ImGui::PlotHistogram("Left Upper Arm COM Y", &leftUpperArmGraph[1][0], graphFrames, 0, "", -leftUpperArmGraphYHeight, leftUpperArmGraphYHeight, ImVec2(0, 100), 4);
+        ImGui::SliderFloat("Left Upper Arm COM Y Height", &leftUpperArmGraphYHeight, 1, 200);
+        ImGui::PlotHistogram("Left Upper Arm COM Z", &leftUpperArmGraph[2][0], graphFrames, 0, "", -leftUpperArmGraphZHeight, leftUpperArmGraphZHeight, ImVec2(0, 100), 4);
+        ImGui::SliderFloat("Left Upper Arm COM Z Height", &leftUpperArmGraphZHeight, 1, 200);
+      }
+
+      if (ImGui::CollapsingHeader("Right Upper Arm COM"))
+      {
+        rightUpperArmGraph[0][bvhFrame] = segmentsCogVertices[3].x;
+        rightUpperArmGraph[1][bvhFrame] = segmentsCogVertices[3].y;
+        rightUpperArmGraph[2][bvhFrame] = segmentsCogVertices[3].z;
+        static float rightUpperArmGraphXHeight = 150.0f;
+        static float rightUpperArmGraphYHeight = 150.0f;
+        static float rightUpperArmGraphZHeight = 150.0f;
+        ImGui::PlotHistogram("Right Upper Arm COM X", &rightUpperArmGraph[0][0], graphFrames, 0, "", -rightUpperArmGraphXHeight, rightUpperArmGraphXHeight, ImVec2(0, 100), 4);
+        ImGui::SliderFloat("Right Upper Arm COM X Height", &rightUpperArmGraphXHeight, 1, 200);
+        ImGui::PlotHistogram("Right Upper Arm COM Y", &rightUpperArmGraph[1][0], graphFrames, 0, "", -rightUpperArmGraphYHeight, rightUpperArmGraphYHeight, ImVec2(0, 100), 4);
+        ImGui::SliderFloat("Right Upper Arm COM Y Height", &rightUpperArmGraphYHeight, 1, 200);
+        ImGui::PlotHistogram("Right Upper Arm COM Z", &rightUpperArmGraph[2][0], graphFrames, 0, "", -rightUpperArmGraphZHeight, rightUpperArmGraphZHeight, ImVec2(0, 100), 4);
+        ImGui::SliderFloat("Right Upper Arm COM Z Height", &rightUpperArmGraphZHeight, 1, 200);
+      }
+
+      if (ImGui::CollapsingHeader("Left Fore Arm COM"))
+      {
+        leftForeArmGraph[0][bvhFrame] = segmentsCogVertices[4].x;
+        leftForeArmGraph[1][bvhFrame] = segmentsCogVertices[4].y;
+        leftForeArmGraph[2][bvhFrame] = segmentsCogVertices[4].z;
+        static float leftForeArmGraphXHeight = 150.0f;
+        static float leftForeArmGraphYHeight = 150.0f;
+        static float leftForeArmGraphZHeight = 150.0f;
+        ImGui::PlotHistogram("Left Fore Arm COM X", &leftForeArmGraph[0][0], graphFrames, 0, "", -leftForeArmGraphXHeight, leftForeArmGraphXHeight, ImVec2(0, 100), 4);
+        ImGui::SliderFloat("Left Fore Arm COM X Height", &leftForeArmGraphXHeight, 1, 200);
+        ImGui::PlotHistogram("Left Fore Arm COM Y", &leftForeArmGraph[1][0], graphFrames, 0, "", -leftForeArmGraphYHeight, leftForeArmGraphYHeight, ImVec2(0, 100), 4);
+        ImGui::SliderFloat("Left Fore Arm COM Y Height", &leftForeArmGraphYHeight, 1, 200);
+        ImGui::PlotHistogram("Left Fore Arm COM Z", &leftForeArmGraph[2][0], graphFrames, 0, "", -leftForeArmGraphZHeight, leftForeArmGraphZHeight, ImVec2(0, 100), 4);
+        ImGui::SliderFloat("Left Fore Arm COM Z Height", &leftForeArmGraphZHeight, 1, 200);
+      }
+
+      if (ImGui::CollapsingHeader("Right Fore Arm COM"))
+      {
+        rightForeArmGraph[0][bvhFrame] = segmentsCogVertices[5].x;
+        rightForeArmGraph[1][bvhFrame] = segmentsCogVertices[5].y;
+        rightForeArmGraph[2][bvhFrame] = segmentsCogVertices[5].z;
+        static float rightForeArmGraphXHeight = 150.0f;
+        static float rightForeArmGraphYHeight = 150.0f;
+        static float rightForeArmGraphZHeight = 150.0f;
+        ImGui::PlotHistogram("Right Fore Arm COM X", &rightForeArmGraph[0][0], graphFrames, 0, "", -rightForeArmGraphXHeight, rightForeArmGraphXHeight, ImVec2(0, 100), 4);
+        ImGui::SliderFloat("Right Fore Arm COM X Height", &rightForeArmGraphXHeight, 1, 200);
+        ImGui::PlotHistogram("Right Fore Arm COM Y", &rightForeArmGraph[1][0], graphFrames, 0, "", -rightForeArmGraphYHeight, rightForeArmGraphYHeight, ImVec2(0, 100), 4);
+        ImGui::SliderFloat("Right Fore Arm COM Y Height", &rightForeArmGraphYHeight, 1, 200);
+        ImGui::PlotHistogram("Right Fore Arm COM Z", &rightForeArmGraph[2][0], graphFrames, 0, "", -rightForeArmGraphZHeight, rightForeArmGraphZHeight, ImVec2(0, 100), 4);
+        ImGui::SliderFloat("Right Fore Arm COM Z Height", &rightForeArmGraphZHeight, 1, 200);
+      }
+
+      if (ImGui::CollapsingHeader("Left Hand COM"))
+      {
+        leftHandGraph[0][bvhFrame] = segmentsCogVertices[6].x;
+        leftHandGraph[1][bvhFrame] = segmentsCogVertices[6].y;
+        leftHandGraph[2][bvhFrame] = segmentsCogVertices[6].z;
+        static float leftHandGraphXHeight = 150.0f;
+        static float leftHandGraphYHeight = 150.0f;
+        static float leftHandGraphZHeight = 150.0f;
+        ImGui::PlotHistogram("Left Hand COM X", &leftHandGraph[0][0], graphFrames, 0, "", -leftHandGraphXHeight, leftHandGraphXHeight, ImVec2(0, 100), 4);
+        ImGui::SliderFloat("Left Hand COM X Height", &leftHandGraphXHeight, 1, 200);
+        ImGui::PlotHistogram("Left Hand COM Y", &leftHandGraph[1][0], graphFrames, 0, "", -leftHandGraphYHeight, leftHandGraphYHeight, ImVec2(0, 100), 4);
+        ImGui::SliderFloat("Left Hand COM Y Height", &leftHandGraphYHeight, 1, 200);
+        ImGui::PlotHistogram("Left Hand COM Z", &leftHandGraph[2][0], graphFrames, 0, "", -leftHandGraphZHeight, leftHandGraphZHeight, ImVec2(0, 100), 4);
+        ImGui::SliderFloat("Left Hand COM Z Height", &leftHandGraphZHeight, 1, 200);
+      }
+
+      if (ImGui::CollapsingHeader("Right Hand COM"))
+      {
+        rightHandGraph[0][bvhFrame] = segmentsCogVertices[7].x;
+        rightHandGraph[1][bvhFrame] = segmentsCogVertices[7].y;
+        rightHandGraph[2][bvhFrame] = segmentsCogVertices[7].z;
+        static float rightHandGraphXHeight = 150.0f;
+        static float rightHandGraphYHeight = 150.0f;
+        static float rightHandGraphZHeight = 150.0f;
+        ImGui::PlotHistogram("Right Hand COM X", &rightHandGraph[0][0], graphFrames, 0, "", -rightHandGraphXHeight, rightHandGraphXHeight, ImVec2(0, 100), 4);
+        ImGui::SliderFloat("Right Hand COM X Height", &rightHandGraphXHeight, 1, 200);
+        ImGui::PlotHistogram("Right Hand COM Y", &rightHandGraph[1][0], graphFrames, 0, "", -rightHandGraphYHeight, rightHandGraphYHeight, ImVec2(0, 100), 4);
+        ImGui::SliderFloat("Right Hand COM Y Height", &rightHandGraphYHeight, 1, 200);
+        ImGui::PlotHistogram("Right Hand COM Z", &rightHandGraph[2][0], graphFrames, 0, "", -rightHandGraphZHeight, rightHandGraphZHeight, ImVec2(0, 100), 4);
+        ImGui::SliderFloat("Right Hand COM Z Height", &rightHandGraphZHeight, 1, 200);
+      }
+
+      if (ImGui::CollapsingHeader("Left Thigh COM"))
+      {
+        leftThighGraph[0][bvhFrame] = segmentsCogVertices[8].x;
+        leftThighGraph[1][bvhFrame] = segmentsCogVertices[8].y;
+        leftThighGraph[2][bvhFrame] = segmentsCogVertices[8].z;
+        static float leftThighGraphXHeight = 150.0f;
+        static float leftThighGraphYHeight = 150.0f;
+        static float leftThighGraphZHeight = 150.0f;
+        ImGui::PlotHistogram("Left Thigh COM X", &leftThighGraph[0][0], graphFrames, 0, "", -leftThighGraphXHeight, leftThighGraphXHeight, ImVec2(0, 100), 4);
+        ImGui::SliderFloat("Left Thigh COM X Height", &leftThighGraphXHeight, 1, 200);
+        ImGui::PlotHistogram("Left Thigh COM Y", &leftThighGraph[1][0], graphFrames, 0, "", -leftThighGraphYHeight, leftThighGraphYHeight, ImVec2(0, 100), 4);
+        ImGui::SliderFloat("Left Thigh COM Y Height", &leftThighGraphYHeight, 1, 200);
+        ImGui::PlotHistogram("Left Thigh COM Z", &leftThighGraph[2][0], graphFrames, 0, "", -leftThighGraphZHeight, leftThighGraphZHeight, ImVec2(0, 100), 4);
+        ImGui::SliderFloat("Left Thigh COM Z Height", &leftThighGraphZHeight, 1, 200);
+      }
+
+      if (ImGui::CollapsingHeader("Right Thigh COM"))
+      {
+        rightThighGraph[0][bvhFrame] = segmentsCogVertices[9].x;
+        rightThighGraph[1][bvhFrame] = segmentsCogVertices[9].y;
+        rightThighGraph[2][bvhFrame] = segmentsCogVertices[9].z;
+        static float rightThighGraphXHeight = 150.0f;
+        static float rightThighGraphYHeight = 150.0f;
+        static float rightThighGraphZHeight = 150.0f;
+        ImGui::PlotHistogram("Right Thigh COM X", &rightThighGraph[0][0], graphFrames, 0, "", -rightThighGraphXHeight, rightThighGraphXHeight, ImVec2(0, 100), 4);
+        ImGui::SliderFloat("Right Thigh COM X Height", &rightThighGraphXHeight, 1, 200);
+        ImGui::PlotHistogram("Right Thigh COM Y", &rightThighGraph[1][0], graphFrames, 0, "", -rightThighGraphYHeight, rightThighGraphYHeight, ImVec2(0, 100), 4);
+        ImGui::SliderFloat("Right Thigh COM Y Height", &rightThighGraphYHeight, 1, 200);
+        ImGui::PlotHistogram("Right Thigh COM Z", &rightThighGraph[2][0], graphFrames, 0, "", -rightThighGraphZHeight, rightThighGraphZHeight, ImVec2(0, 100), 4);
+        ImGui::SliderFloat("Right Thigh COM Z Height", &rightThighGraphZHeight, 1, 200);
+      }
+
+      if (ImGui::CollapsingHeader("Left Shank COM"))
+      {
+        leftShankGraph[0][bvhFrame] = segmentsCogVertices[10].x;
+        leftShankGraph[1][bvhFrame] = segmentsCogVertices[10].y;
+        leftShankGraph[2][bvhFrame] = segmentsCogVertices[10].z;
+        static float leftShankGraphXHeight = 150.0f;
+        static float leftShankGraphYHeight = 150.0f;
+        static float leftShankGraphZHeight = 150.0f;
+        ImGui::PlotHistogram("Left Shank COM X", &leftShankGraph[0][0], graphFrames, 0, "", -leftShankGraphXHeight, leftShankGraphXHeight, ImVec2(0, 100), 4);
+        ImGui::SliderFloat("Left Shank COM X Height", &leftShankGraphXHeight, 1, 200);
+        ImGui::PlotHistogram("Left Shank COM Y", &leftShankGraph[1][0], graphFrames, 0, "", -leftShankGraphYHeight, leftShankGraphYHeight, ImVec2(0, 100), 4);
+        ImGui::SliderFloat("Left Shank COM Y Height", &leftShankGraphYHeight, 1, 200);
+        ImGui::PlotHistogram("Left Shank COM Z", &leftShankGraph[2][0], graphFrames, 0, "", -leftShankGraphZHeight, leftShankGraphZHeight, ImVec2(0, 100), 4);
+        ImGui::SliderFloat("Left Shank COM Z Height", &leftShankGraphZHeight, 1, 200);
+      }
+
+      if (ImGui::CollapsingHeader("Right Shank COM"))
+      {
+        rightShankGraph[0][bvhFrame] = segmentsCogVertices[11].x;
+        rightShankGraph[1][bvhFrame] = segmentsCogVertices[11].y;
+        rightShankGraph[2][bvhFrame] = segmentsCogVertices[11].z;
+        static float rightShankGraphXHeight = 150.0f;
+        static float rightShankGraphYHeight = 150.0f;
+        static float rightShankGraphZHeight = 150.0f;
+        ImGui::PlotHistogram("Right Shank COM X", &rightShankGraph[0][0], graphFrames, 0, "", -rightShankGraphXHeight, rightShankGraphXHeight, ImVec2(0, 100), 4);
+        ImGui::SliderFloat("Right Shank COM X Height", &rightShankGraphXHeight, 1, 200);
+        ImGui::PlotHistogram("Right Shank COM Y", &rightShankGraph[1][0], graphFrames, 0, "", -rightShankGraphYHeight, rightShankGraphYHeight, ImVec2(0, 100), 4);
+        ImGui::SliderFloat("Right Shank COM Y Height", &rightShankGraphYHeight, 1, 200);
+        ImGui::PlotHistogram("Right Shank COM Z", &rightShankGraph[2][0], graphFrames, 0, "", -rightShankGraphZHeight, rightShankGraphZHeight, ImVec2(0, 100), 4);
+        ImGui::SliderFloat("Right Shank COM Z Height", &rightShankGraphZHeight, 1, 200);
+      }
+
+      if (ImGui::CollapsingHeader("Left Foot COM"))
+      {
+        leftFootGraph[0][bvhFrame] = segmentsCogVertices[12].x;
+        leftFootGraph[1][bvhFrame] = segmentsCogVertices[12].y;
+        leftFootGraph[2][bvhFrame] = segmentsCogVertices[12].z;
+        static float leftFootGraphXHeight = 150.0f;
+        static float leftFootGraphYHeight = 150.0f;
+        static float leftFootGraphZHeight = 150.0f;
+        ImGui::PlotHistogram("Left Foot COM X", &leftFootGraph[0][0], graphFrames, 0, "", -leftFootGraphXHeight, leftFootGraphXHeight, ImVec2(0, 100), 4);
+        ImGui::SliderFloat("Left Foot COM X Height", &leftFootGraphXHeight, 1, 200);
+        ImGui::PlotHistogram("Left Foot COM Y", &leftFootGraph[1][0], graphFrames, 0, "", -leftFootGraphYHeight, leftFootGraphYHeight, ImVec2(0, 100), 4);
+        ImGui::SliderFloat("Left Foot COM Y Height", &leftFootGraphYHeight, 1, 200);
+        ImGui::PlotHistogram("Left Foot COM Z", &leftFootGraph[2][0], graphFrames, 0, "", -leftFootGraphZHeight, leftFootGraphZHeight, ImVec2(0, 100), 4);
+        ImGui::SliderFloat("Left Foot COM Z Height", &leftFootGraphZHeight, 1, 200);
+      }
+
+      if (ImGui::CollapsingHeader("Right Foot COM"))
+      {
+        rightFootGraph[0][bvhFrame] = segmentsCogVertices[12].x;
+        rightFootGraph[1][bvhFrame] = segmentsCogVertices[12].y;
+        rightFootGraph[2][bvhFrame] = segmentsCogVertices[12].z;
+        static float rightFootGraphXHeight = 150.0f;
+        static float rightFootGraphYHeight = 150.0f;
+        static float rightFootGraphZHeight = 150.0f;
+        ImGui::PlotHistogram("Right Foot COM X", &rightFootGraph[0][0], graphFrames, 0, "", -rightFootGraphXHeight, rightFootGraphXHeight, ImVec2(0, 100), 4);
+        ImGui::SliderFloat("Right Foot COM X Height", &rightFootGraphXHeight, 1, 200);
+        ImGui::PlotHistogram("Right Foot COM Y", &rightFootGraph[1][0], graphFrames, 0, "", -rightFootGraphYHeight, rightFootGraphYHeight, ImVec2(0, 100), 4);
+        ImGui::SliderFloat("Right Foot COM Y Height", &rightFootGraphYHeight, 1, 200);
+        ImGui::PlotHistogram("Right Foot COM Z", &rightFootGraph[2][0], graphFrames, 0, "", -rightFootGraphZHeight, rightFootGraphZHeight, ImVec2(0, 100), 4);
+        ImGui::SliderFloat("Right Foot COM Z Height", &rightFootGraphZHeight, 1, 200);
+      }
 
       ImGui::End();
     }
@@ -840,6 +1051,8 @@ int main(int argc, char* argv[])
   glfwTerminate();
   return 0;
 }
+
+/*################################################################################################################################################*/
 
 // GLFW callbacks definitions
 void frameBufferSizeCallback(GLFWwindow* window, int width, int height)
