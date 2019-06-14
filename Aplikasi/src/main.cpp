@@ -288,7 +288,7 @@ int main(int argc, char* argv[])
     return -1;
   }
   glEnable(GL_DEPTH_TEST);
-  glfwSwapInterval(1);
+  glfwSwapInterval(0);
 
   // floor
   float floorVertices[] = {
@@ -476,7 +476,7 @@ int main(int argc, char* argv[])
   rightFootGraph[1].resize(graphFrames);
   rightFootGraph[2].resize(graphFrames);
 
-  //double lastTimeFrame = glfwGetTime();
+  double lastTimeFrame = glfwGetTime();
   while (!glfwWindowShouldClose(window))
   {
     glfwPollEvents();
@@ -567,7 +567,7 @@ int main(int argc, char* argv[])
       ImGui::Checkbox("Render Segments COM", &renderSegmentCOM);
       ImGui::SameLine();
       ImGui::Checkbox("Render Body COM", &renderBodyCOM);
-      ImGui::SameLine();
+      //ImGui::SameLine();
 
       //ImGui::InputInt("Desired FPS", &FPS);
       ImGui::Text("%.1f FPS", ImGui::GetIO().Framerate);
@@ -1043,10 +1043,11 @@ int main(int argc, char* argv[])
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     glfwSwapBuffers(window);
 
-    //while (glfwGetTime() < lastTimeFrame + 1.0 / FPS) 
-    //{
-    //}
-    //lastTimeFrame += 1.0 / FPS; 
+    while (glfwGetTime() < lastTimeFrame + 1.0 / FPS) 
+    {
+      Sleep(10);
+    }
+    lastTimeFrame += 1.0 / FPS; 
   }
   glfwTerminate();
   return 0;
