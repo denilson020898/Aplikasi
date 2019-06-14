@@ -19,7 +19,6 @@
 void frameBufferSizeCallback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window);
 void mouseCallback(GLFWwindow* window, double xpos, double ypos);
-//void scrollCallback(GLFWwindow* window, double xoffset, double yoffset);
 
 // renderer settings
 unsigned int screenWidth = 1800;
@@ -29,9 +28,9 @@ float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 bool loop = false;
 bool renderBones = true;
-bool renderJoints = false;
-bool renderSegmentCOG = false;
-bool renderBodyCOG = true;
+bool renderJoints = true;
+bool renderSegmentCOM = false;
+bool renderBodyCOM = true;
 bool trailing = false;
 
 // camera settings
@@ -45,39 +44,38 @@ float pitch = 0.0f;
 float lastX = screenWidth / 2.0f;
 float lastY = screenHeight / 2.0f;
 float fov = 45.0f;
-float backgroundColor[3] = {0.2f, 0.2f, 0.2f};
-float floorColor[3] = {0.05f, 0.05f, 0.05f};
-float boneColor[3] = {0.5f, 0.5f, 0.5f};
-float jointColor[3] = {0.5f, 1.0f, 1.0f};
-float segmentComColor[3] = {1.0f, 1.0f, 0.0f};
-float comColor[3] = {1.0f, 1.0f, 0.5f};
+float backgroundColor[3] = { 0.2f, 0.2f, 0.2f };
+float floorColor[3] = { 0.05f, 0.05f, 0.05f };
+float boneColor[3] = { 0.5f, 0.5f, 0.5f };
+float jointColor[3] = { 0.5f, 1.0f, 1.0f };
+float segmentComColor[3] = { 1.0f, 1.0f, 0.0f };
+float comColor[3] = { 1.0f, 0.0f, 0.0f };
 
-// COG properties
+// COM properties
 int selectedGender = 0;
 float totalBodyWeight = 60.0f;
 
-float headNeckMassPercent[2] = { 6.94f  , 6.68f  };
-float trunkMassPercent[2]    = { 43.46f , 42.58f };
-float upperArmMassPercent[2] = { 2.71f  , 2.55f  };
-float foreArmMassPercent[2]  = { 1.62f  , 1.38f  };
-float handMassPercent[2]     = { 0.61f  , 0.56f  };
-float thighMassPercent[2]    = { 14.16f , 14.78f };
-float shankMassPercent[2]    = { 4.33f  , 4.81f  };
-float footMassPercent[2]     = { 1.37f  , 1.29f  };
+float headNeckMassPercent[2] = { 6.94f, 6.68f };
+float trunkMassPercent[2] = { 43.46f, 42.58f };
+float upperArmMassPercent[2] = { 2.71f, 2.55f };
+float foreArmMassPercent[2] = { 1.62f, 1.38f };
+float handMassPercent[2] = { 0.61f, 0.56f };
+float thighMassPercent[2] = { 14.16f, 14.78f };
+float shankMassPercent[2] = { 4.33f, 4.81f };
+float footMassPercent[2] = { 1.37f, 1.29f };
 
-float headNeckLengthPercent[2] = { 50.02f , 48.41f };
-float trunkLengthPercent[2]    = { 43.10f , 37.82f };
-float upperArmLengthPercent[2] = { 57.72f , 57.54f };
-float foreArmLengthPercent[2]  = { 45.74f , 45.59f };
-float handLengthPercent[2]     = { 79.00f , 74.74f };
-float thighLengthPercent[2]    = { 40.95f , 36.12f };
-float shankLengthPercent[2]    = { 43.95f , 43.52f };
-float footLengthPercent[2]     = { 44.15f , 40.14f };
+float headNeckLengthPercent[2] = { 50.02f, 48.41f };
+float trunkLengthPercent[2] = { 43.10f, 37.82f };
+float upperArmLengthPercent[2] = { 57.72f, 57.54f };
+float foreArmLengthPercent[2] = { 45.74f, 45.59f };
+float handLengthPercent[2] = { 79.00f, 74.74f };
+float thighLengthPercent[2] = { 40.95f, 36.12f };
+float shankLengthPercent[2] = { 43.95f, 43.52f };
+float footLengthPercent[2] = { 44.15f, 40.14f };
 
 // bvh settings
-float boneWidth = 2.0;
-float jointPointSize = 4.0;
-float comPointSize = 8.0;
+float boneWidth = 1.0;
+float jointPointSize = 2.0;
 
 Bvh2* bvh;
 unsigned int bvhVBO, bvhEBO, bvhVAO;
@@ -87,14 +85,14 @@ short bvhElements = 0;
 int bvhFrame = 0;
 bool frameChange = false;
 
-unsigned int cogVBO, cogVAO;
-std::vector<glm::vec4> cogVertices;
+unsigned int comVBO, comVAO;
+std::vector<glm::vec4> comVertices;
 
 unsigned int segmentsCogVBO, segmentsCogVAO;
 std::vector<glm::vec4> segmentsCogVertices;
 
-void processBvh(Joint * joint, std::vector<glm::vec4>& vertices, 
-                std::vector<short>& indices, short parentIndex = 0)
+void processBvh(Joint* joint, std::vector<glm::vec4>& vertices,
+  std::vector<short>& indices, short parentIndex = 0)
 {
   glm::vec4 translatedVertex = joint->matrix[3];
   vertices.push_back(translatedVertex);
@@ -114,105 +112,103 @@ glm::vec4 myLerp(glm::vec4 x, glm::vec4 y, float t) {
   return x * (1.f - t / 100.0f) + y * (t / 100.0f);
 }
 
-void processCOG(const std::vector<glm::vec4>& bvhVertices, std::vector<glm::vec4>& cogVertices)
+void processCOM(const std::vector<glm::vec4>& bvhVertices, std::vector<glm::vec4>& comVertices)
 {
-  if (!trailing)
-  {
-    cogVertices.clear();
-    segmentsCogVertices.clear();
-  }
+  comVertices.clear();
+  segmentsCogVertices.clear();
+  comVertices.clear();
 
   // head
-  glm::vec4 headNeck =  myLerp(bvhVertices[3], bvhVertices[5], headNeckLengthPercent[selectedGender]);
+  glm::vec4 headNeck = myLerp(bvhVertices[3], bvhVertices[5], headNeckLengthPercent[selectedGender]);
   // trunk
-  glm::vec4 trunk =  myLerp(bvhVertices[0], bvhVertices[2], headNeckLengthPercent[selectedGender]);
+  glm::vec4 trunk = myLerp(bvhVertices[0], bvhVertices[2], trunkLengthPercent[selectedGender]);
   // left upper arm
-  glm::vec4 leftUpperArm = myLerp(bvhVertices[6], bvhVertices[8], headNeckLengthPercent[selectedGender]);
+  glm::vec4 leftUpperArm = myLerp(bvhVertices[6], bvhVertices[8], upperArmLengthPercent[selectedGender]);
   // right upper arm
-  glm::vec4 rightUpperArm = myLerp(bvhVertices[11], bvhVertices[13], headNeckLengthPercent[selectedGender]);
+  glm::vec4 rightUpperArm = myLerp(bvhVertices[11], bvhVertices[13], upperArmLengthPercent[selectedGender]);
   // left fore arm
-  glm::vec4 leftForeArm = myLerp(bvhVertices[8], bvhVertices[9], headNeckLengthPercent[selectedGender]);
+  glm::vec4 leftForeArm = myLerp(bvhVertices[8], bvhVertices[9], foreArmLengthPercent[selectedGender]);
   // right fore arm
-  glm::vec4 rightForeArm = myLerp(bvhVertices[13], bvhVertices[14], headNeckLengthPercent[selectedGender]);
+  glm::vec4 rightForeArm = myLerp(bvhVertices[13], bvhVertices[14], foreArmLengthPercent[selectedGender]);
   // left hand
-  glm::vec4 leftHand = myLerp(bvhVertices[9], bvhVertices[10], headNeckLengthPercent[selectedGender]);
+  glm::vec4 leftHand = myLerp(bvhVertices[9], bvhVertices[10], handLengthPercent[selectedGender]);
   // right hand
-  glm::vec4 rightHand = myLerp(bvhVertices[14], bvhVertices[15], headNeckLengthPercent[selectedGender]);
+  glm::vec4 rightHand = myLerp(bvhVertices[14], bvhVertices[15], handLengthPercent[selectedGender]);
   // left thigh
-  glm::vec4 leftThigh = myLerp(bvhVertices[16], bvhVertices[17], headNeckLengthPercent[selectedGender]);
+  glm::vec4 leftThigh = myLerp(bvhVertices[16], bvhVertices[17], thighLengthPercent[selectedGender]);
   // right thigh
-  glm::vec4 rightThigh = myLerp(bvhVertices[21], bvhVertices[22], headNeckLengthPercent[selectedGender]);
+  glm::vec4 rightThigh = myLerp(bvhVertices[21], bvhVertices[22], thighLengthPercent[selectedGender]);
   // left shank
-  glm::vec4 leftShank = myLerp(bvhVertices[17], bvhVertices[18], headNeckLengthPercent[selectedGender]);
+  glm::vec4 leftShank = myLerp(bvhVertices[17], bvhVertices[18], shankLengthPercent[selectedGender]);
   // right shank
-  glm::vec4 rightShank = myLerp(bvhVertices[22], bvhVertices[23], headNeckLengthPercent[selectedGender]);
+  glm::vec4 rightShank = myLerp(bvhVertices[22], bvhVertices[23], shankLengthPercent[selectedGender]);
   // left foot
-  glm::vec4 leftFoot = myLerp(bvhVertices[18], bvhVertices[20], headNeckLengthPercent[selectedGender]);
+  glm::vec4 leftFoot = myLerp(bvhVertices[18], bvhVertices[20], footLengthPercent[selectedGender]);
   // right foot
-  glm::vec4 rightFoot = myLerp(bvhVertices[23], bvhVertices[25], headNeckLengthPercent[selectedGender]);
+  glm::vec4 rightFoot = myLerp(bvhVertices[23], bvhVertices[25], footLengthPercent[selectedGender]);
 
-  // body COG
+  // body COM
   float headNeckMass = (headNeckMassPercent[selectedGender] / 100.0f) * totalBodyWeight;
-  float trunkMass    = (trunkMassPercent[selectedGender] / 100.0f) * totalBodyWeight;
+  float trunkMass = (trunkMassPercent[selectedGender] / 100.0f) * totalBodyWeight;
   float upperArmMass = (upperArmMassPercent[selectedGender] / 100.0f) * totalBodyWeight;
-  float foreArmMass  = (foreArmMassPercent[selectedGender] / 100.0f) * totalBodyWeight;
-  float handMass     = (handMassPercent[selectedGender] / 100.0f) * totalBodyWeight;
-  float thighMass    = (thighMassPercent[selectedGender] / 100.0f) * totalBodyWeight;
-  float shankMass    = (shankMassPercent[selectedGender] / 100.0f) * totalBodyWeight;
-  float footMass     = (footMassPercent[selectedGender] / 100.0f) * totalBodyWeight;
+  float foreArmMass = (foreArmMassPercent[selectedGender] / 100.0f) * totalBodyWeight;
+  float handMass = (handMassPercent[selectedGender] / 100.0f) * totalBodyWeight;
+  float thighMass = (thighMassPercent[selectedGender] / 100.0f) * totalBodyWeight;
+  float shankMass = (shankMassPercent[selectedGender] / 100.0f) * totalBodyWeight;
+  float footMass = (footMassPercent[selectedGender] / 100.0f) * totalBodyWeight;
 
-  float bodyCOGX = (
-    (headNeck.x * headNeckMass) + 
-    (trunk.x * trunkMass) + 
-    (leftUpperArm.x * upperArmMass) + 
-    (rightUpperArm.x * upperArmMass) + 
-    (leftForeArm.x * foreArmMass) + 
-    (rightForeArm.x * foreArmMass) + 
-    (leftHand.x * handMass) + 
-    (rightHand.x * handMass) + 
-    (leftThigh.x * thighMass) + 
-    (rightThigh.x * thighMass) + 
-    (leftShank.x * shankMass) + 
-    (rightShank.x * shankMass) + 
-    (leftFoot.x * footMass) + 
-    (rightFoot.x * footMass) 
+  float bodyCOMX = (
+    (headNeck.x * headNeckMass) +
+    (trunk.x * trunkMass) +
+    (leftUpperArm.x * upperArmMass) +
+    (rightUpperArm.x * upperArmMass) +
+    (leftForeArm.x * foreArmMass) +
+    (rightForeArm.x * foreArmMass) +
+    (leftHand.x * handMass) +
+    (rightHand.x * handMass) +
+    (leftThigh.x * thighMass) +
+    (rightThigh.x * thighMass) +
+    (leftShank.x * shankMass) +
+    (rightShank.x * shankMass) +
+    (leftFoot.x * footMass) +
+    (rightFoot.x * footMass)
     ) / totalBodyWeight;
 
-  float bodyCOGY = (
-    (headNeck.y * headNeckMass) + 
-    (trunk.y * trunkMass) + 
-    (leftUpperArm.y * upperArmMass) + 
-    (rightUpperArm.y * upperArmMass) + 
-    (leftForeArm.y * foreArmMass) + 
-    (rightForeArm.y * foreArmMass) + 
-    (leftHand.y * handMass) + 
-    (rightHand.y * handMass) + 
-    (leftThigh.y * thighMass) + 
-    (rightThigh.y * thighMass) + 
-    (leftShank.y * shankMass) + 
-    (rightShank.y * shankMass) + 
-    (leftFoot.y * footMass) + 
-    (rightFoot.y * footMass) 
+  float bodyCOMY = (
+    (headNeck.y * headNeckMass) +
+    (trunk.y * trunkMass) +
+    (leftUpperArm.y * upperArmMass) +
+    (rightUpperArm.y * upperArmMass) +
+    (leftForeArm.y * foreArmMass) +
+    (rightForeArm.y * foreArmMass) +
+    (leftHand.y * handMass) +
+    (rightHand.y * handMass) +
+    (leftThigh.y * thighMass) +
+    (rightThigh.y * thighMass) +
+    (leftShank.y * shankMass) +
+    (rightShank.y * shankMass) +
+    (leftFoot.y * footMass) +
+    (rightFoot.y * footMass)
     ) / totalBodyWeight;
 
-  float bodyCOGZ = (
-    (headNeck.z * headNeckMass) + 
-    (trunk.z * trunkMass) + 
-    (leftUpperArm.z * upperArmMass) + 
-    (rightUpperArm.z * upperArmMass) + 
-    (leftForeArm.z * foreArmMass) + 
-    (rightForeArm.z * foreArmMass) + 
-    (leftHand.z * handMass) + 
-    (rightHand.z * handMass) + 
-    (leftThigh.z * thighMass) + 
-    (rightThigh.z * thighMass) + 
-    (leftShank.z * shankMass) + 
-    (rightShank.z * shankMass) + 
-    (leftFoot.z * footMass) + 
-    (rightFoot.z * footMass) 
+  float bodyCOMZ = (
+    (headNeck.z * headNeckMass) +
+    (trunk.z * trunkMass) +
+    (leftUpperArm.z * upperArmMass) +
+    (rightUpperArm.z * upperArmMass) +
+    (leftForeArm.z * foreArmMass) +
+    (rightForeArm.z * foreArmMass) +
+    (leftHand.z * handMass) +
+    (rightHand.z * handMass) +
+    (leftThigh.z * thighMass) +
+    (rightThigh.z * thighMass) +
+    (leftShank.z * shankMass) +
+    (rightShank.z * shankMass) +
+    (leftFoot.z * footMass) +
+    (rightFoot.z * footMass)
     ) / totalBodyWeight;
 
-  glm::vec4 bodyCOG = glm::vec4(bodyCOGX, bodyCOGY, bodyCOGZ, 1.0f);
+  glm::vec4 bodyCOM = glm::vec4(bodyCOMX, bodyCOMY, bodyCOMZ, 1.0f);
 
   // push
   segmentsCogVertices.push_back(headNeck);
@@ -229,22 +225,19 @@ void processCOG(const std::vector<glm::vec4>& bvhVertices, std::vector<glm::vec4
   segmentsCogVertices.push_back(rightShank);
   segmentsCogVertices.push_back(leftFoot);
   segmentsCogVertices.push_back(rightFoot);
-  glGenVertexArrays(1, &segmentsCogVAO);
-  glGenBuffers(1, &segmentsCogVBO);
+
+
   glBindVertexArray(segmentsCogVAO);
   glBindBuffer(GL_ARRAY_BUFFER, segmentsCogVBO);
   glBufferData(GL_ARRAY_BUFFER, sizeof(segmentsCogVertices[0]) * segmentsCogVertices.size(), &segmentsCogVertices[0], GL_DYNAMIC_DRAW);
   glBindBuffer(GL_ARRAY_BUFFER, segmentsCogVBO);
   glEnableVertexAttribArray(0);
   glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, 0);
-
-  cogVertices.push_back(bodyCOG);
-  glGenVertexArrays(1, &cogVAO);
-  glGenBuffers(1, &cogVBO);
-  glBindVertexArray(cogVAO);
-  glBindBuffer(GL_ARRAY_BUFFER, cogVBO);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(cogVertices[0]) * cogVertices.size(), &cogVertices[0], GL_DYNAMIC_DRAW);
-  glBindBuffer(GL_ARRAY_BUFFER, cogVBO);
+  comVertices.push_back(bodyCOM);
+  glBindVertexArray(comVAO);
+  glBindBuffer(GL_ARRAY_BUFFER, comVBO);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(comVertices[0]) * comVertices.size(), &comVertices[0], GL_DYNAMIC_DRAW);
+  glBindBuffer(GL_ARRAY_BUFFER, comVBO);
   glEnableVertexAttribArray(0);
   glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, 0);
 }
@@ -261,7 +254,7 @@ void updateBvh()
     else if (!loop && (unsigned int)bvhFrame < bvh->getNumFrames())
     {
     }
-    else 
+    else
     {
       frameChange = false;
       bvhFrame = 0;
@@ -280,7 +273,7 @@ void updateBvh()
   glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-int main()
+int main(int argc, char* argv[])
 {
   glfwInit();
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -297,7 +290,6 @@ int main()
   glfwMakeContextCurrent(window);
   glfwSetFramebufferSizeCallback(window, frameBufferSizeCallback);
   glfwSetCursorPosCallback(window, mouseCallback);
-  //glfwSetScrollCallback(window, scrollCallback);
 
   if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
   {
@@ -305,14 +297,14 @@ int main()
     return -1;
   }
   glEnable(GL_DEPTH_TEST);
-  glfwSwapInterval(1); 
+  glfwSwapInterval(1);
 
   // floor
   float floorVertices[] = {
-     100.0f, 0.0f,  100.0f,
-     100.0f, 0.0f, -100.0f,
+    100.0f, 0.0f, 100.0f,
+    100.0f, 0.0f, -100.0f,
     -100.0f, 0.0f, -100.0f,
-    -100.0f, 0.0f,  100.0f
+    -100.0f, 0.0f, 100.0f
   };
   unsigned int floorIndices[] = {
     0, 1, 3,
@@ -338,12 +330,19 @@ int main()
 
   // bvh
   bvh = new Bvh2;
-  bvh->load("data/example2.bvh");
+  //bvh->load("data/example2.bvh");
+  const char* filename = argv[1];
+  bvh->load(filename);
   bvh->moveTo(bvhFrame);
   bvhVertices.clear();
   bvhIndices.clear();
   processBvh((Joint*)bvh->getRootJoint(), bvhVertices, bvhIndices);
   bvhElements = (short)bvhIndices.size();
+
+  glGenVertexArrays(1, &segmentsCogVAO);
+  glGenBuffers(1, &segmentsCogVBO);
+  glGenVertexArrays(1, &comVAO);
+  glGenBuffers(1, &comVBO);
 
   glGenVertexArrays(1, &bvhVAO);
   glGenBuffers(1, &bvhVBO);
@@ -380,6 +379,111 @@ int main()
   // scale the model if it's too big
   //model = glm::scale(model, glm::vec3(0.25f, 0.25f, 0.25f));
 
+  // body com graph
+  std::vector<std::vector<float>> comGraph;
+  comGraph.resize(3);
+  comGraph[0].resize(bvh->getNumFrames());
+  comGraph[1].resize(bvh->getNumFrames());
+  comGraph[2].resize(bvh->getNumFrames());
+
+  // head neck com graph
+  std::vector<std::vector<float>> headNeckGraph;
+  headNeckGraph.resize(3);
+  headNeckGraph[0].resize(bvh->getNumFrames());
+  headNeckGraph[1].resize(bvh->getNumFrames());
+  headNeckGraph[2].resize(bvh->getNumFrames());
+
+  // trunk com graph
+  std::vector<std::vector<float>> trunkGraph;
+  trunkGraph.resize(3);
+  trunkGraph[0].resize(bvh->getNumFrames());
+  trunkGraph[1].resize(bvh->getNumFrames());
+  trunkGraph[2].resize(bvh->getNumFrames());
+
+  // left upper arm com graph
+  std::vector<std::vector<float>> leftUpperArmGraph;
+  leftUpperArmGraph.resize(3);
+  leftUpperArmGraph[0].resize(bvh->getNumFrames());
+  leftUpperArmGraph[1].resize(bvh->getNumFrames());
+  leftUpperArmGraph[2].resize(bvh->getNumFrames());
+
+  // right upper arm com graph
+  std::vector<std::vector<float>> rightUpperArmGraph;
+  rightUpperArmGraph.resize(3);
+  rightUpperArmGraph[0].resize(bvh->getNumFrames());
+  rightUpperArmGraph[1].resize(bvh->getNumFrames());
+  rightUpperArmGraph[2].resize(bvh->getNumFrames());
+
+  // left fore arm com graph
+  std::vector<std::vector<float>> leftForeArmGraph;
+  leftForeArmGraph.resize(3);
+  leftForeArmGraph[0].resize(bvh->getNumFrames());
+  leftForeArmGraph[1].resize(bvh->getNumFrames());
+  leftForeArmGraph[2].resize(bvh->getNumFrames());
+
+  // right fore arm com graph
+  std::vector<std::vector<float>> rightForeArmGraph;
+  rightForeArmGraph.resize(3);
+  rightForeArmGraph[0].resize(bvh->getNumFrames());
+  rightForeArmGraph[1].resize(bvh->getNumFrames());
+  rightForeArmGraph[2].resize(bvh->getNumFrames());
+
+  // left hand com graph
+  std::vector<std::vector<float>> leftHandGraph;
+  leftHandGraph.resize(3);
+  leftHandGraph[0].resize(bvh->getNumFrames());
+  leftHandGraph[1].resize(bvh->getNumFrames());
+  leftHandGraph[2].resize(bvh->getNumFrames());
+
+  // right hand com graph
+  std::vector<std::vector<float>> rightHandGraph;
+  rightHandGraph.resize(3);
+  rightHandGraph[0].resize(bvh->getNumFrames());
+  rightHandGraph[1].resize(bvh->getNumFrames());
+  rightHandGraph[2].resize(bvh->getNumFrames());
+
+  // left thigh com graph
+  std::vector<std::vector<float>> leftThighGraph;
+  leftThighGraph.resize(3);
+  leftThighGraph[0].resize(bvh->getNumFrames());
+  leftThighGraph[1].resize(bvh->getNumFrames());
+  leftThighGraph[2].resize(bvh->getNumFrames());
+
+  // right thigh com graph
+  std::vector<std::vector<float>> rightThighGraph;
+  rightThighGraph.resize(3);
+  rightThighGraph[0].resize(bvh->getNumFrames());
+  rightThighGraph[1].resize(bvh->getNumFrames());
+  rightThighGraph[2].resize(bvh->getNumFrames());
+
+  // left shank com graph
+  std::vector<std::vector<float>> leftShankGraph;
+  leftShankGraph.resize(3);
+  leftShankGraph[0].resize(bvh->getNumFrames());
+  leftShankGraph[1].resize(bvh->getNumFrames());
+  leftShankGraph[2].resize(bvh->getNumFrames());
+
+  // right shank com graph
+  std::vector<std::vector<float>> rightShankGraph;
+  rightShankGraph.resize(3);
+  rightShankGraph[0].resize(bvh->getNumFrames());
+  rightShankGraph[1].resize(bvh->getNumFrames());
+  rightShankGraph[2].resize(bvh->getNumFrames());
+
+  // left foot com graph
+  std::vector<std::vector<float>> leftFootGraph;
+  leftFootGraph.resize(3);
+  leftFootGraph[0].resize(bvh->getNumFrames());
+  leftFootGraph[1].resize(bvh->getNumFrames());
+  leftFootGraph[2].resize(bvh->getNumFrames());
+
+  // right foot com graph
+  std::vector<std::vector<float>> rightFootGraph;
+  rightFootGraph.resize(3);
+  rightFootGraph[0].resize(bvh->getNumFrames());
+  rightFootGraph[1].resize(bvh->getNumFrames());
+  rightFootGraph[2].resize(bvh->getNumFrames());
+
   //double lastTimeFrame = glfwGetTime();
   while (!glfwWindowShouldClose(window))
   {
@@ -400,9 +504,9 @@ int main()
     glPointSize(jointPointSize);
 
     // pre render calculation
-    view = glm::lookAt(cameraPos, cameraPos+cameraFront, cameraUp);
-    projection = glm::perspective(glm::radians(fov), (float)screenWidth/(float)screenHeight, 
-                                  0.1f, 1000.0f);
+    view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
+    projection = glm::perspective(glm::radians(fov), (float)screenWidth / (float)screenHeight,
+      0.1f, 1000.0f);
     mvp = projection * view * model;
 
     // draw floor
@@ -431,20 +535,20 @@ int main()
       glDrawElements(GL_POINTS, bvhElements, GL_UNSIGNED_SHORT, (void*)0);
     }
 
-    // cog
-    processCOG(bvhVertices, cogVertices);
-    if (renderBodyCOG)
+    // com
+    processCOM(bvhVertices, comVertices);
+    if (renderBodyCOM)
     {
       floorShader.setVec3("ourColor", comColor[0], comColor[1], comColor[2]);
-      glBindVertexArray(cogVAO);
-      glDrawArrays(GL_POINTS, 0, cogVertices.size());
+      glBindVertexArray(comVAO);
+      glDrawArrays(GL_POINTS, 0, (int)comVertices.size());
     }
 
-    if (renderSegmentCOG)
+    if (renderSegmentCOM)
     {
       floorShader.setVec3("ourColor", segmentComColor[0], segmentComColor[1], segmentComColor[2]);
       glBindVertexArray(segmentsCogVAO);
-      glDrawArrays(GL_POINTS, 0, segmentsCogVertices.size());
+      glDrawArrays(GL_POINTS, 0, (int)segmentsCogVertices.size());
     }
 
     // BVH Player Settings;
@@ -468,9 +572,9 @@ int main()
       ImGui::SameLine();
       ImGui::Checkbox("Render Joints", &renderJoints);
       ImGui::SameLine();
-      ImGui::Checkbox("Render Segments COG", &renderSegmentCOG);
+      ImGui::Checkbox("Render Segments COM", &renderSegmentCOM);
       ImGui::SameLine();
-      ImGui::Checkbox("Render Body COG", &renderBodyCOG);
+      ImGui::Checkbox("Render Body COM", &renderBodyCOM);
       ImGui::SameLine();
       ImGui::Checkbox("Trailing", &trailing);
 
@@ -501,12 +605,14 @@ int main()
           jointColor[0] = 0.5f;
           jointColor[1] = 1.0f;
           jointColor[2] = 1.0f;
+          segmentComColor[0] = 1.0f;
+          segmentComColor[1] = 1.0f;
+          segmentComColor[2] = 0.0f;
           comColor[0] = 1.0f;
-          comColor[1] = 1.0f;
-          comColor[2] = 0.5f;
-          boneWidth = 2.0;
-          jointPointSize = 4.0;
-          comPointSize = 8.0;
+          comColor[1] = 0.0f;
+          comColor[2] = 0.0f;
+          boneWidth = 1.0;
+          jointPointSize = 2.0;
         }
 
         ImGui::ColorEdit3("Bone Color ", boneColor);
@@ -537,27 +643,6 @@ int main()
           nameVector[i] = nameVector[i - 1] + nameVector[i];
       }
 
-      if (ImGui::CollapsingHeader("PlotLines Example")) {
-        int index = 13;
-        float plotHeight = 200.0f;
-        static constexpr int length = 176;
-        static float linesx[length] = { 0 };
-        static float linesy[length] = { 0 };
-        static float linesz[length] = { 0 };
-        if (frameChange)
-        {
-          linesx[bvhFrame] = bvhVertices[index].x;
-          linesy[bvhFrame] = bvhVertices[index].y;
-          linesz[bvhFrame] = bvhVertices[index].z;
-        }
-        //ImGui::PlotLines("Test X", linesx, length, 0, "x", -150.0f, 150.0f, ImVec2(0,plotHeight));
-        //ImGui::PlotLines("Test Y", linesy, length, 0, "y", -150.0f, 150.0f, ImVec2(0,plotHeight));
-        //ImGui::PlotLines("Test Z", linesz, length, 0, "z", -150.0f, 150.0f, ImVec2(0,plotHeight));
-        ImGui::PlotHistogram("Text X", linesx, length, 0, "X", -150.0f, 150.0f, ImVec2(0, plotHeight));
-        ImGui::PlotHistogram("Text Y", linesy, length, 0, "Y", -150.0f, 150.0f, ImVec2(0, plotHeight));
-        ImGui::PlotHistogram("Text Z", linesz, length, 0, "Z", -150.0f, 150.0f, ImVec2(0, plotHeight));
-      }
-
       if (ImGui::CollapsingHeader("Joints' World X Y Z Positions"))
       {
         for (size_t i = 0; i < nameVector.size(); i++)
@@ -570,7 +655,7 @@ int main()
         }
       }
 
-      if (ImGui::CollapsingHeader("COG Properties"))
+      if (ImGui::CollapsingHeader("COM Properties"))
       {
         ImGui::Text(" ");
 
@@ -595,58 +680,58 @@ int main()
 
         ImGui::Columns(2);
         ImGui::Separator();
-        ImGui::InputFloat("Head & Neck Mass Male", &headNeckMassPercent[0]); 
+        ImGui::InputFloat("Head & Neck Mass Male", &headNeckMassPercent[0]);
         ImGui::NextColumn();
-        ImGui::InputFloat("Head & Neck Mass Female", &headNeckMassPercent[1]); 
+        ImGui::InputFloat("Head & Neck Mass Female", &headNeckMassPercent[1]);
         ImGui::Columns(1);
 
         ImGui::Columns(2);
         ImGui::Separator();
-        ImGui::InputFloat("Trunk Mass Male", &trunkMassPercent[0]); 
+        ImGui::InputFloat("Trunk Mass Male", &trunkMassPercent[0]);
         ImGui::NextColumn();
-        ImGui::InputFloat("Trunk Mass Female", &trunkMassPercent[1]); 
+        ImGui::InputFloat("Trunk Mass Female", &trunkMassPercent[1]);
         ImGui::Columns(1);
 
         ImGui::Columns(2);
         ImGui::Separator();
-        ImGui::InputFloat("Upper Arm Mass Male", &upperArmMassPercent[0]); 
+        ImGui::InputFloat("Upper Arm Mass Male", &upperArmMassPercent[0]);
         ImGui::NextColumn();
-        ImGui::InputFloat("Upper Arm Mass Female", &upperArmMassPercent[1]); 
+        ImGui::InputFloat("Upper Arm Mass Female", &upperArmMassPercent[1]);
         ImGui::Columns(1);
 
         ImGui::Columns(2);
         ImGui::Separator();
-        ImGui::InputFloat("Fore Arm Mass Male", &foreArmMassPercent[0]); 
+        ImGui::InputFloat("Fore Arm Mass Male", &foreArmMassPercent[0]);
         ImGui::NextColumn();
-        ImGui::InputFloat("Fore Arm Mass Female", &foreArmMassPercent[1]); 
+        ImGui::InputFloat("Fore Arm Mass Female", &foreArmMassPercent[1]);
         ImGui::Columns(1);
 
         ImGui::Columns(2);
         ImGui::Separator();
-        ImGui::InputFloat("Hand Mass Male", &handMassPercent[0]); 
+        ImGui::InputFloat("Hand Mass Male", &handMassPercent[0]);
         ImGui::NextColumn();
-        ImGui::InputFloat("Hand Mass Female", &handMassPercent[1]); 
+        ImGui::InputFloat("Hand Mass Female", &handMassPercent[1]);
         ImGui::Columns(1);
 
         ImGui::Columns(2);
         ImGui::Separator();
-        ImGui::InputFloat("Thigh Mass Male", &thighMassPercent[0]); 
+        ImGui::InputFloat("Thigh Mass Male", &thighMassPercent[0]);
         ImGui::NextColumn();
-        ImGui::InputFloat("Thigh Mass Female", &thighMassPercent[1]); 
+        ImGui::InputFloat("Thigh Mass Female", &thighMassPercent[1]);
         ImGui::Columns(1);
 
         ImGui::Columns(2);
         ImGui::Separator();
-        ImGui::InputFloat("Shank Mass Male", &shankMassPercent[0]); 
+        ImGui::InputFloat("Shank Mass Male", &shankMassPercent[0]);
         ImGui::NextColumn();
-        ImGui::InputFloat("Shank Mass Female", &shankMassPercent[1]); 
+        ImGui::InputFloat("Shank Mass Female", &shankMassPercent[1]);
         ImGui::Columns(1);
 
         ImGui::Columns(2);
         ImGui::Separator();
-        ImGui::InputFloat("Foot Mass Male", &footMassPercent[0]); 
+        ImGui::InputFloat("Foot Mass Male", &footMassPercent[0]);
         ImGui::NextColumn();
-        ImGui::InputFloat("Foot Mass Female", &footMassPercent[1]); 
+        ImGui::InputFloat("Foot Mass Female", &footMassPercent[1]);
         ImGui::Columns(1);
         ImGui::Separator();
 
@@ -658,58 +743,58 @@ int main()
 
         ImGui::Columns(2);
         ImGui::Separator();
-        ImGui::InputFloat("Head & Neck Length Male", &headNeckLengthPercent[0]); 
+        ImGui::InputFloat("Head & Neck Length Male", &headNeckLengthPercent[0]);
         ImGui::NextColumn();
-        ImGui::InputFloat("Head & Neck Length Female", &headNeckLengthPercent[1]); 
+        ImGui::InputFloat("Head & Neck Length Female", &headNeckLengthPercent[1]);
         ImGui::Columns(1);
 
         ImGui::Columns(2);
         ImGui::Separator();
-        ImGui::InputFloat("Trunk Length Male", &trunkLengthPercent[0]); 
+        ImGui::InputFloat("Trunk Length Male", &trunkLengthPercent[0]);
         ImGui::NextColumn();
-        ImGui::InputFloat("Trunk Length Female", &trunkLengthPercent[1]); 
+        ImGui::InputFloat("Trunk Length Female", &trunkLengthPercent[1]);
         ImGui::Columns(1);
 
         ImGui::Columns(2);
         ImGui::Separator();
-        ImGui::InputFloat("Upper Arm Length Male", &upperArmLengthPercent[0]); 
+        ImGui::InputFloat("Upper Arm Length Male", &upperArmLengthPercent[0]);
         ImGui::NextColumn();
-        ImGui::InputFloat("Upper Arm Length Female", &upperArmLengthPercent[1]); 
+        ImGui::InputFloat("Upper Arm Length Female", &upperArmLengthPercent[1]);
         ImGui::Columns(1);
 
         ImGui::Columns(2);
         ImGui::Separator();
-        ImGui::InputFloat("Fore Arm Length Male", &foreArmLengthPercent[0]); 
+        ImGui::InputFloat("Fore Arm Length Male", &foreArmLengthPercent[0]);
         ImGui::NextColumn();
-        ImGui::InputFloat("Fore Arm Length Female", &foreArmLengthPercent[1]); 
+        ImGui::InputFloat("Fore Arm Length Female", &foreArmLengthPercent[1]);
         ImGui::Columns(1);
 
         ImGui::Columns(2);
         ImGui::Separator();
-        ImGui::InputFloat("Hand Length Male", &handLengthPercent[0]); 
+        ImGui::InputFloat("Hand Length Male", &handLengthPercent[0]);
         ImGui::NextColumn();
-        ImGui::InputFloat("Hand Length Female", &handLengthPercent[1]); 
+        ImGui::InputFloat("Hand Length Female", &handLengthPercent[1]);
         ImGui::Columns(1);
 
         ImGui::Columns(2);
         ImGui::Separator();
-        ImGui::InputFloat("Thigh Length Male", &thighLengthPercent[0]); 
+        ImGui::InputFloat("Thigh Length Male", &thighLengthPercent[0]);
         ImGui::NextColumn();
-        ImGui::InputFloat("Thigh Length Female", &thighLengthPercent[1]); 
+        ImGui::InputFloat("Thigh Length Female", &thighLengthPercent[1]);
         ImGui::Columns(1);
 
         ImGui::Columns(2);
         ImGui::Separator();
-        ImGui::InputFloat("Shank Length Male", &shankLengthPercent[0]); 
+        ImGui::InputFloat("Shank Length Male", &shankLengthPercent[0]);
         ImGui::NextColumn();
-        ImGui::InputFloat("Shank Length Female", &shankLengthPercent[1]); 
+        ImGui::InputFloat("Shank Length Female", &shankLengthPercent[1]);
         ImGui::Columns(1);
 
         ImGui::Columns(2);
         ImGui::Separator();
-        ImGui::InputFloat("Foot Length Male", &footLengthPercent[0]); 
+        ImGui::InputFloat("Foot Length Male", &footLengthPercent[0]);
         ImGui::NextColumn();
-        ImGui::InputFloat("Foot Length Female", &footLengthPercent[1]); 
+        ImGui::InputFloat("Foot Length Female", &footLengthPercent[1]);
         ImGui::Columns(1);
         ImGui::Separator();
 
@@ -718,26 +803,23 @@ int main()
 
       if (ImGui::CollapsingHeader("Body COM"))
       {
+        if (frameChange)
+        {
+          comGraph[0][bvhFrame] = comVertices[0].x;
+          comGraph[1][bvhFrame] = comVertices[0].y;
+          comGraph[2][bvhFrame] = comVertices[0].z;
+        }
+        static float comGraphXHeight = 100.0f;
+        static float comGraphYHeight = 100.0f;
+        static float comGraphZHeight = 100.0f;
+        ImGui::PlotHistogram("Body COM X", &comGraph[0][0], bvh->getNumFrames(), 0, "", -comGraphXHeight, comGraphXHeight, ImVec2(0, 100), 4);
+        ImGui::SliderFloat("Body COM X Height", &comGraphXHeight, 1, 200);
+        ImGui::PlotHistogram("Body COM Y", &comGraph[1][0], bvh->getNumFrames(), 0, "", -comGraphYHeight, comGraphYHeight, ImVec2(0, 100), 4);
+        ImGui::SliderFloat("Body COM Y Height", &comGraphYHeight, 1, 200);
+        ImGui::PlotHistogram("Body COM Z", &comGraph[2][0], bvh->getNumFrames(), 0, "", -comGraphZHeight, comGraphZHeight, ImVec2(0, 100), 4);
+        ImGui::SliderFloat("Body COM Z Height", &comGraphZHeight, 1, 200);
       }
 
-      if (ImGui::CollapsingHeader("Trunk"))
-      {
-      }
-      if (ImGui::CollapsingHeader("Head"))
-      {
-      }
-      if (ImGui::CollapsingHeader("Left Arm"))
-      {
-      }
-      if (ImGui::CollapsingHeader("Right Arm"))
-      {
-      }
-      if (ImGui::CollapsingHeader("Left Leg"))
-      {
-      }
-      if (ImGui::CollapsingHeader("Right Leg"))
-      {
-      }
 
       ImGui::End();
     }
@@ -760,12 +842,12 @@ int main()
 }
 
 // GLFW callbacks definitions
-void frameBufferSizeCallback(GLFWwindow * window, int width, int height)
+void frameBufferSizeCallback(GLFWwindow* window, int width, int height)
 {
   glViewport(0, 0, width, height);
 }
 
-void processInput(GLFWwindow * window)
+void processInput(GLFWwindow* window)
 {
   if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
     glfwSetWindowShouldClose(window, true);
@@ -796,7 +878,7 @@ void processInput(GLFWwindow * window)
     FPS += 1;
 }
 
-void mouseCallback(GLFWwindow * window, double xpos, double ypos)
+void mouseCallback(GLFWwindow* window, double xpos, double ypos)
 {
   float xposf = (float)xpos;
   float yposf = (float)ypos;
@@ -836,14 +918,4 @@ void mouseCallback(GLFWwindow * window, double xpos, double ypos)
     cameraFront = glm::normalize(front);
   }
 }
-
-//void scrollCallback(GLFWwindow * window, double xoffset, double yoffset)
-//{
-//  if (fov >= 1.0f && fov <= 45.0f)
-//    fov -= (float)yoffset;
-//  if (fov <= 1.0f)
-//    fov = 1.0f;
-//  if (fov >= 45.0f)
-//    fov = 45.0f;
-//}
 
