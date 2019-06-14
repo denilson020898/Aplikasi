@@ -110,36 +110,115 @@ void processCOG(const std::vector<glm::vec4>& bvhVertices, std::vector<glm::vec4
   cogVertices.clear();
 
   // head
-  cogVertices.push_back(myLerp(bvhVertices[3], bvhVertices[5], headNeckLengthPercent[selectedGender]));
+  glm::vec4 headNeck =  myLerp(bvhVertices[3], bvhVertices[5], headNeckLengthPercent[selectedGender]);
   // trunk
-  cogVertices.push_back(myLerp(bvhVertices[0], bvhVertices[2], headNeckLengthPercent[selectedGender]));
+  glm::vec4 trunk =  myLerp(bvhVertices[0], bvhVertices[2], headNeckLengthPercent[selectedGender]);
   // left upper arm
-  cogVertices.push_back(myLerp(bvhVertices[6], bvhVertices[8], headNeckLengthPercent[selectedGender]));
+  glm::vec4 leftUpperArm = myLerp(bvhVertices[6], bvhVertices[8], headNeckLengthPercent[selectedGender]);
   // right upper arm
-  cogVertices.push_back(myLerp(bvhVertices[11], bvhVertices[13], headNeckLengthPercent[selectedGender]));
+  glm::vec4 rightUpperArm = myLerp(bvhVertices[11], bvhVertices[13], headNeckLengthPercent[selectedGender]);
   // left fore arm
-  cogVertices.push_back(myLerp(bvhVertices[8], bvhVertices[9], headNeckLengthPercent[selectedGender]));
+  glm::vec4 leftForeArm = myLerp(bvhVertices[8], bvhVertices[9], headNeckLengthPercent[selectedGender]);
   // right fore arm
-  cogVertices.push_back(myLerp(bvhVertices[13], bvhVertices[14], headNeckLengthPercent[selectedGender]));
+  glm::vec4 rightForeArm = myLerp(bvhVertices[13], bvhVertices[14], headNeckLengthPercent[selectedGender]);
   // left hand
-  cogVertices.push_back(myLerp(bvhVertices[9], bvhVertices[10], headNeckLengthPercent[selectedGender]));
+  glm::vec4 leftHand = myLerp(bvhVertices[9], bvhVertices[10], headNeckLengthPercent[selectedGender]);
   // right hand
-  cogVertices.push_back(myLerp(bvhVertices[14], bvhVertices[15], headNeckLengthPercent[selectedGender]));
+  glm::vec4 rightHand = myLerp(bvhVertices[14], bvhVertices[15], headNeckLengthPercent[selectedGender]);
   // left thigh
-  cogVertices.push_back(myLerp(bvhVertices[16], bvhVertices[17], headNeckLengthPercent[selectedGender]));
+  glm::vec4 leftThigh = myLerp(bvhVertices[16], bvhVertices[17], headNeckLengthPercent[selectedGender]);
   // right thigh
-  cogVertices.push_back(myLerp(bvhVertices[21], bvhVertices[22], headNeckLengthPercent[selectedGender]));
+  glm::vec4 rightThigh = myLerp(bvhVertices[21], bvhVertices[22], headNeckLengthPercent[selectedGender]);
   // left shank
-  cogVertices.push_back(myLerp(bvhVertices[17], bvhVertices[18], headNeckLengthPercent[selectedGender]));
+  glm::vec4 leftShank = myLerp(bvhVertices[17], bvhVertices[18], headNeckLengthPercent[selectedGender]);
   // right shank
-  cogVertices.push_back(myLerp(bvhVertices[22], bvhVertices[23], headNeckLengthPercent[selectedGender]));
+  glm::vec4 rightShank = myLerp(bvhVertices[22], bvhVertices[23], headNeckLengthPercent[selectedGender]);
   // left foot
-  cogVertices.push_back(myLerp(bvhVertices[18], bvhVertices[20], headNeckLengthPercent[selectedGender]));
+  glm::vec4 leftFoot = myLerp(bvhVertices[18], bvhVertices[20], headNeckLengthPercent[selectedGender]);
   // right foot
-  cogVertices.push_back(myLerp(bvhVertices[23], bvhVertices[25], headNeckLengthPercent[selectedGender]));
+  glm::vec4 rightFoot = myLerp(bvhVertices[23], bvhVertices[25], headNeckLengthPercent[selectedGender]);
 
-  // BODY COG
-  
+  // body COG
+  float headNeckMass = (headNeckMassPercent[selectedGender] / 100.0f) * totalBodyWeight;
+  float trunkMass    = (trunkMassPercent[selectedGender] / 100.0f) * totalBodyWeight;
+  float upperArmMass = (upperArmMassPercent[selectedGender] / 100.0f) * totalBodyWeight;
+  float foreArmMass  = (foreArmMassPercent[selectedGender] / 100.0f) * totalBodyWeight;
+  float handMass     = (handMassPercent[selectedGender] / 100.0f) * totalBodyWeight;
+  float thighMass    = (thighMassPercent[selectedGender] / 100.0f) * totalBodyWeight;
+  float shankMass    = (shankMassPercent[selectedGender] / 100.0f) * totalBodyWeight;
+  float footMass     = (footMassPercent[selectedGender] / 100.0f) * totalBodyWeight;
+
+  float bodyCOGX = (
+    (headNeck.x * headNeckMass) + 
+    (trunk.x * trunkMass) + 
+    (leftUpperArm.x * upperArmMass) + 
+    (rightUpperArm.x * upperArmMass) + 
+    (leftForeArm.x * foreArmMass) + 
+    (rightForeArm.x * foreArmMass) + 
+    (leftHand.x * handMass) + 
+    (rightHand.x * handMass) + 
+    (leftThigh.x * thighMass) + 
+    (rightThigh.x * thighMass) + 
+    (leftShank.x * shankMass) + 
+    (rightShank.x * shankMass) + 
+    (leftFoot.x * footMass) + 
+    (rightFoot.x * footMass) 
+    ) / totalBodyWeight;
+
+  float bodyCOGY = (
+    (headNeck.y * headNeckMass) + 
+    (trunk.y * trunkMass) + 
+    (leftUpperArm.y * upperArmMass) + 
+    (rightUpperArm.y * upperArmMass) + 
+    (leftForeArm.y * foreArmMass) + 
+    (rightForeArm.y * foreArmMass) + 
+    (leftHand.y * handMass) + 
+    (rightHand.y * handMass) + 
+    (leftThigh.y * thighMass) + 
+    (rightThigh.y * thighMass) + 
+    (leftShank.y * shankMass) + 
+    (rightShank.y * shankMass) + 
+    (leftFoot.y * footMass) + 
+    (rightFoot.y * footMass) 
+    ) / totalBodyWeight;
+
+  float bodyCOGZ = (
+    (headNeck.z * headNeckMass) + 
+    (trunk.z * trunkMass) + 
+    (leftUpperArm.z * upperArmMass) + 
+    (rightUpperArm.z * upperArmMass) + 
+    (leftForeArm.z * foreArmMass) + 
+    (rightForeArm.z * foreArmMass) + 
+    (leftHand.z * handMass) + 
+    (rightHand.z * handMass) + 
+    (leftThigh.z * thighMass) + 
+    (rightThigh.z * thighMass) + 
+    (leftShank.z * shankMass) + 
+    (rightShank.z * shankMass) + 
+    (leftFoot.z * footMass) + 
+    (rightFoot.z * footMass) 
+    ) / totalBodyWeight;
+
+  glm::vec4 bodyCOG = glm::vec4(bodyCOGX, bodyCOGY, bodyCOGZ, 1.0f);
+
+  // push
+  cogVertices.push_back(headNeck);
+  cogVertices.push_back(trunk);
+  cogVertices.push_back(leftUpperArm);
+  cogVertices.push_back(rightUpperArm);
+  cogVertices.push_back(leftForeArm);
+  cogVertices.push_back(rightForeArm);
+  cogVertices.push_back(leftHand);
+  cogVertices.push_back(rightHand);
+  cogVertices.push_back(leftThigh);
+  cogVertices.push_back(rightThigh);
+  cogVertices.push_back(leftShank);
+  cogVertices.push_back(rightShank);
+  cogVertices.push_back(leftFoot);
+  cogVertices.push_back(rightFoot);
+
+  cogVertices.push_back(bodyCOG);
+
 
   glGenVertexArrays(1, &cogVAO);
   glGenBuffers(1, &cogVBO);
