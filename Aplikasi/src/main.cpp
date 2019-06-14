@@ -28,6 +28,11 @@ int FPS = 100;
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 bool loop = false;
+bool renderBones = true;
+bool renderJoints = false;
+bool renderSegmentCOG = false;
+bool renderBodyCOG = true;
+bool trailing = false;
 
 // camera settings
 glm::vec3 cameraPos = glm::vec3(100.0f, 70.0f, 300.0f);
@@ -44,6 +49,7 @@ float backgroundColor[3] = {0.2f, 0.2f, 0.2f};
 float floorColor[3] = {0.05f, 0.05f, 0.05f};
 float boneColor[3] = {0.5f, 0.5f, 0.5f};
 float jointColor[3] = {0.5f, 1.0f, 1.0f};
+float segmentComColor[3] = {1.0f, 1.0f, 0.0f};
 float comColor[3] = {1.0f, 1.0f, 0.5f};
 
 // COG properties
@@ -84,6 +90,9 @@ bool frameChange = false;
 unsigned int cogVBO, cogVAO;
 std::vector<glm::vec4> cogVertices;
 
+unsigned int segmentsCogVBO, segmentsCogVAO;
+std::vector<glm::vec4> segmentsCogVertices;
+
 void processBvh(Joint * joint, std::vector<glm::vec4>& vertices, 
                 std::vector<short>& indices, short parentIndex = 0)
 {
@@ -107,7 +116,11 @@ glm::vec4 myLerp(glm::vec4 x, glm::vec4 y, float t) {
 
 void processCOG(const std::vector<glm::vec4>& bvhVertices, std::vector<glm::vec4>& cogVertices)
 {
-  cogVertices.clear();
+  if (!trailing)
+  {
+    cogVertices.clear();
+    segmentsCogVertices.clear();
+  }
 
   // head
   glm::vec4 headNeck =  myLerp(bvhVertices[3], bvhVertices[5], headNeckLengthPercent[selectedGender]);
@@ -202,29 +215,33 @@ void processCOG(const std::vector<glm::vec4>& bvhVertices, std::vector<glm::vec4
   glm::vec4 bodyCOG = glm::vec4(bodyCOGX, bodyCOGY, bodyCOGZ, 1.0f);
 
   // push
-  cogVertices.push_back(headNeck);
-  cogVertices.push_back(trunk);
-  cogVertices.push_back(leftUpperArm);
-  cogVertices.push_back(rightUpperArm);
-  cogVertices.push_back(leftForeArm);
-  cogVertices.push_back(rightForeArm);
-  cogVertices.push_back(leftHand);
-  cogVertices.push_back(rightHand);
-  cogVertices.push_back(leftThigh);
-  cogVertices.push_back(rightThigh);
-  cogVertices.push_back(leftShank);
-  cogVertices.push_back(rightShank);
-  cogVertices.push_back(leftFoot);
-  cogVertices.push_back(rightFoot);
+  segmentsCogVertices.push_back(headNeck);
+  segmentsCogVertices.push_back(trunk);
+  segmentsCogVertices.push_back(leftUpperArm);
+  segmentsCogVertices.push_back(rightUpperArm);
+  segmentsCogVertices.push_back(leftForeArm);
+  segmentsCogVertices.push_back(rightForeArm);
+  segmentsCogVertices.push_back(leftHand);
+  segmentsCogVertices.push_back(rightHand);
+  segmentsCogVertices.push_back(leftThigh);
+  segmentsCogVertices.push_back(rightThigh);
+  segmentsCogVertices.push_back(leftShank);
+  segmentsCogVertices.push_back(rightShank);
+  segmentsCogVertices.push_back(leftFoot);
+  segmentsCogVertices.push_back(rightFoot);
+  glGenVertexArrays(1, &segmentsCogVAO);
+  glGenBuffers(1, &segmentsCogVBO);
+  glBindVertexArray(segmentsCogVAO);
+  glBindBuffer(GL_ARRAY_BUFFER, segmentsCogVBO);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(segmentsCogVertices[0]) * segmentsCogVertices.size(), &segmentsCogVertices[0], GL_DYNAMIC_DRAW);
+  glBindBuffer(GL_ARRAY_BUFFER, segmentsCogVBO);
+  glEnableVertexAttribArray(0);
+  glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, 0);
 
   cogVertices.push_back(bodyCOG);
-
-
   glGenVertexArrays(1, &cogVAO);
   glGenBuffers(1, &cogVBO);
-
   glBindVertexArray(cogVAO);
-
   glBindBuffer(GL_ARRAY_BUFFER, cogVBO);
   glBufferData(GL_ARRAY_BUFFER, sizeof(cogVertices[0]) * cogVertices.size(), &cogVertices[0], GL_DYNAMIC_DRAW);
   glBindBuffer(GL_ARRAY_BUFFER, cogVBO);
@@ -321,7 +338,7 @@ int main()
 
   // bvh
   bvh = new Bvh2;
-  bvh->load("data/example4.bvh");
+  bvh->load("data/example2.bvh");
   bvh->moveTo(bvhFrame);
   bvhVertices.clear();
   bvhIndices.clear();
@@ -344,8 +361,6 @@ int main()
   glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(bvhIndices[0]) * bvhIndices.size(), &bvhIndices[0], GL_DYNAMIC_DRAW);
 
   Shader bvhShader("shader.vs", "shader.fs");
-
-
 
   // ImGui Context
   ImGui::CreateContext();
@@ -401,17 +416,36 @@ int main()
     bvhShader.use();
     bvhShader.setMat4("mvp", mvp);
     updateBvh();
-    glBindVertexArray(bvhVAO);
-    bvhShader.setVec3("ourColor", boneColor[0], boneColor[1], boneColor[2]);
-    glDrawElements(GL_LINES, bvhElements, GL_UNSIGNED_SHORT, (void*)0);
-    bvhShader.setVec3("ourColor", jointColor[0], jointColor[1], jointColor[2]);
-    glDrawElements(GL_POINTS, bvhElements, GL_UNSIGNED_SHORT, (void*)0);
+
+    if (renderBones)
+    {
+      glBindVertexArray(bvhVAO);
+      bvhShader.setVec3("ourColor", boneColor[0], boneColor[1], boneColor[2]);
+      glDrawElements(GL_LINES, bvhElements, GL_UNSIGNED_SHORT, (void*)0);
+    }
+
+    if (renderJoints)
+    {
+      glBindVertexArray(bvhVAO);
+      bvhShader.setVec3("ourColor", jointColor[0], jointColor[1], jointColor[2]);
+      glDrawElements(GL_POINTS, bvhElements, GL_UNSIGNED_SHORT, (void*)0);
+    }
 
     // cog
     processCOG(bvhVertices, cogVertices);
-    floorShader.setVec3("ourColor", comColor[0], comColor[1], comColor[2]);
-    glBindVertexArray(cogVAO);
-    glDrawArrays(GL_POINTS, 0, cogVertices.size());
+    if (renderBodyCOG)
+    {
+      floorShader.setVec3("ourColor", comColor[0], comColor[1], comColor[2]);
+      glBindVertexArray(cogVAO);
+      glDrawArrays(GL_POINTS, 0, cogVertices.size());
+    }
+
+    if (renderSegmentCOG)
+    {
+      floorShader.setVec3("ourColor", segmentComColor[0], segmentComColor[1], segmentComColor[2]);
+      glBindVertexArray(segmentsCogVAO);
+      glDrawArrays(GL_POINTS, 0, segmentsCogVertices.size());
+    }
 
     // BVH Player Settings;
     {
@@ -430,12 +464,22 @@ int main()
       if (ImGui::Button(">") && bvhFrame != bvh->getNumFrames())
         bvhFrame++;
 
+      ImGui::Checkbox("Render Bones", &renderBones);
+      ImGui::SameLine();
+      ImGui::Checkbox("Render Joints", &renderJoints);
+      ImGui::SameLine();
+      ImGui::Checkbox("Render Segments COG", &renderSegmentCOG);
+      ImGui::SameLine();
+      ImGui::Checkbox("Render Body COG", &renderBodyCOG);
+      ImGui::SameLine();
+      ImGui::Checkbox("Trailing", &trailing);
+
       //ImGui::InputInt("Desired FPS", &FPS);
       ImGui::Text("%.1f FPS", ImGui::GetIO().Framerate);
       ImGui::Text("Application average %.3f ms/frame", 1000.0f / ImGui::GetIO().Framerate);
       ImGui::Text("Number of frames: %i", bvh->getNumFrames());
 
-      if (ImGui::CollapsingHeader("Display Settings"))
+      //if (ImGui::CollapsingHeader("Display Settings"))
       {
         ImGui::PushItemWidth(200);
         ImGui::ColorEdit3("Floor Color", floorColor);
@@ -475,7 +519,7 @@ int main()
         ImGui::SameLine();
         ImGui::SliderFloat("Joint Size ", &jointPointSize, 0.001f, 10.0f);
         ImGui::SameLine();
-        ImGui::SliderFloat("COM Size", &comPointSize, 0.001f, 10.0f);
+        ImGui::ColorEdit3("Segments COM Color", segmentComColor);
         ImGui::PopItemWidth();
       }
 
