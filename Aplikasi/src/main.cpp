@@ -44,11 +44,11 @@ float lastX = screenWidth / 2.0f;
 float lastY = screenHeight / 2.0f;
 float fov = 45.0f;
 float backgroundColor[3] = { 0.2f, 0.2f, 0.2f };
-float floorColor[3] = { 0.05f, 0.05f, 0.05f };
-float boneColor[3] = { 0.5f, 0.5f, 0.5f };
-float jointColor[3] = { 0.5f, 1.0f, 1.0f };
+float floorColor[3] = { 0.2f, 0.3f, 0.3f };
+float boneColor[3] = { 0.5f, 0.25f, 0.25f };
+float jointColor[3] = { 1.0f, 0.5f, 0.5f };
 float segmentComColor[3] = { 1.0f, 1.0f, 0.0f };
-float comColor[3] = { 1.0f, 0.0f, 0.0f };
+float comColor[3] = { 0.0f, 1.0f, 0.0f };
 
 // COM properties
 int selectedGender = 0;
@@ -73,8 +73,8 @@ float shankLengthPercent[2] = { 43.95f, 43.52f };
 float footLengthPercent[2] = { 44.15f, 40.14f };
 
 // bvh settings
-float boneWidth = 1.0;
-float jointPointSize = 2.0;
+float boneWidth = 3.0;
+float jointPointSize = 8.0;
 
 Bvh2* bvh;
 unsigned int bvhVBO, bvhEBO, bvhVAO;
@@ -117,7 +117,6 @@ void processCOM(const std::vector<glm::vec4>& bvhVertices, std::vector<glm::vec4
 {
   comVertices.clear();
   segmentsCogVertices.clear();
-  comVertices.clear();
 
   glm::vec4 headNeck = myLerp(bvhVertices[3], bvhVertices[5], headNeckLengthPercent[selectedGender]);
   glm::vec4 trunk = myLerp(bvhVertices[0], bvhVertices[2], trunkLengthPercent[selectedGender]);
@@ -321,9 +320,16 @@ int main(int argc, char* argv[])
 
   // bvh
   bvh = new Bvh2;
-  //bvh->load("data/example2.bvh");
-  const char* filename = argv[1];
-  bvh->load(filename);
+  if (argc > 1)
+  {
+    const char* filename = argv[1];
+    bvh->load(filename);
+  }
+  else
+  {
+    bvh->load("data/example2.bvh");
+  }
+
   bvh->moveTo(bvhFrame);
   bvhVertices.clear();
   bvhIndices.clear();
@@ -587,23 +593,23 @@ int main(int argc, char* argv[])
           backgroundColor[0] = 0.2f;
           backgroundColor[1] = 0.2f;
           backgroundColor[2] = 0.2f;
-          floorColor[0] = 0.05f;
-          floorColor[1] = 0.05f;
-          floorColor[2] = 0.05f;
+          floorColor[0] = 0.2f;
+          floorColor[1] = 0.3f;
+          floorColor[2] = 0.3f;
           boneColor[0] = 0.5f;
-          boneColor[1] = 0.5f;
-          boneColor[2] = 0.5f;
-          jointColor[0] = 0.5f;
-          jointColor[1] = 1.0f;
-          jointColor[2] = 1.0f;
+          boneColor[1] = 0.25f;
+          boneColor[2] = 0.25f;
+          jointColor[0] = 1.0f;
+          jointColor[1] = 0.5f;
+          jointColor[2] = 0.5f;
           segmentComColor[0] = 1.0f;
           segmentComColor[1] = 1.0f;
           segmentComColor[2] = 0.0f;
-          comColor[0] = 1.0f;
-          comColor[1] = 0.0f;
+          comColor[0] = 0.0f;
+          comColor[1] = 1.0f;
           comColor[2] = 0.0f;
-          boneWidth = 1.0;
-          jointPointSize = 2.0;
+          boneWidth = 3.0;
+          jointPointSize = 8.0;
         }
 
         ImGui::ColorEdit3("Bone Color ", boneColor);
